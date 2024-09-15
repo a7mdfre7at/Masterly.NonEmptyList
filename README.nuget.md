@@ -1,12 +1,7 @@
 # Masterly.NonEmptyList
 A simple and lightweight implementation of a non-empty list in C#, inspired by Scala's `List`, that ensures a collection always has at least one item. This helps in reducing null-related bugs and ensures safe operations on collections with at least one element.
 
-<img src="https://raw.githubusercontent.com/a7mdfre7at/Masterly.NonEmptyList/master/repo_image.png" width="200" height="180">
-
-[![Nuget](https://img.shields.io/nuget/v/Masterly.NonEmptyList?style=flat-square)](https://www.nuget.org/packages/Masterly.NonEmptyList) ![Nuget](https://img.shields.io/nuget/dt/Masterly.NonEmptyList?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/a7mdfre7at/Masterly.NonEmptyList?style=flat-square) ![GitHub](https://img.shields.io/github/license/a7mdfre7at/Masterly.NonEmptyList?style=flat-square) [![Build](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml) [![CodeQL Analysis](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql-analysis.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql-analysis.yml) [![Publish to NuGet](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml)
-
-
-## Give a Star! :star:
+## Give a Star on Github! :star:
 
 If you like or are using this project please give it a star. Thanks!
 

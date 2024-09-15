@@ -4,11 +4,12 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
-    <Description>A simple and lightweight implementation of a non-empty list in C#, inspired by Scala's `List`, that ensures a collection always has at least one item. This helps in reducing null-related bugs and ensures safe operations on collections with at least one element.</Description>
+    <Description>A simple and lightweight implementation of a non-empty list in C#, inspired by Scala's List, that ensures a collection always has at least one item. This helps in reducing null-related bugs and ensures safe operations on collections with at least one element.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
     <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
     <PackageTags>List;Data;Structure;NonEmpty;CSharp;DotNet;Masterly;Enumerable</PackageTags>
     <PackageIcon>repo_image.png</PackageIcon>
@@ -16,6 +17,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\README.nuget.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Visible>False</Visible>
+    </None>
     <None Include="..\..\repo_image.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>

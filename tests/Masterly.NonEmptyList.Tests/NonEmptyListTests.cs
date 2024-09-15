@@ -35,7 +35,7 @@ public class NonEmptyListTests
     public void Tail_ShouldThrowException_WhenListHasOneItem()
     {
         var list = new NonEmptyList<int>(1);
-        Assert.Throws<InvalidOperationException>(() => list.Tail);
+        Assert.Null(list.Tail);
     }
 
     [Fact]
@@ -83,5 +83,39 @@ public class NonEmptyListTests
     {
         var list = new NonEmptyList<int>(1, 2, 3);
         Assert.Equal("NonEmptyList: [1, 2, 3]", list.ToString());
+    }
+
+    [Fact]
+    public void From_ShouldCreateNonEmptyList_FromEnumerable()
+    {
+        var enumerable = new List<int> { 1, 2, 3 };
+        var list = NonEmptyList<int>.From(enumerable);
+
+        Assert.Equal(3, list.Count);
+        Assert.Equal(1, list.Head);
+        Assert.Equal(3, list.Last);
+    }
+
+    [Fact]
+    public void From_ShouldThrowException_WhenEnumerableIsEmpty()
+    {
+        var enumerable = new List<int>();
+        Assert.Throws<ArgumentException>(() => NonEmptyList<int>.From(enumerable));
+    }
+
+    [Fact]
+    public void From_ShouldThrowException_WhenEnumerableIsNull()
+    {
+        Assert.Throws<ArgumentException>(() => NonEmptyList<int>.From(null));
+    }
+
+    [Fact]
+    public void AddRange_ShouldAddRangeToNonEmptyList()
+    {
+        var list = new NonEmptyList<int>(1);
+        list.AddRange(new[] { 2, 3 });
+        Assert.Equal(3, list.Count);
+        Assert.Equal(1, list.Head);
+        Assert.Equal(3, list.Last);
     }
 }

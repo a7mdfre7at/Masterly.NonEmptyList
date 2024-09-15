@@ -1,16 +1,15 @@
-﻿using System.Collections;
+﻿namespace Masterly.NonEmptyList;
 
-namespace Masterly.NonEmptyList;
-
-public class NonEmptyList<T> : List<T>, IEnumerable<T>
+public class NonEmptyList<T> : List<T>
 {
     public T Head => this[0]; // Same as First
-    public NonEmptyList<T> Tail
+
+    public NonEmptyList<T>? Tail
     {
         get
         {
             if (Count == 1)
-                throw new InvalidOperationException("Cannot retrieve tail from a list with only one element.");
+                return null;
 
             T[] tailItems = this.Skip(1).ToArray();
             return new NonEmptyList<T>(tailItems[0], tailItems[1..]);
@@ -20,13 +19,17 @@ public class NonEmptyList<T> : List<T>, IEnumerable<T>
     public T First => Head;  // First element of the list
     public T Last => this[^1];  // Last element of the list
 
-    public NonEmptyList(T firstItem, params T[] otherItems)
+    public NonEmptyList(T firstItem, params T[] otherItems) : this(firstItem, otherItems.AsEnumerable()) { }
+
+    public NonEmptyList(T firstItem, IEnumerable<T> otherItems)
     {
         if (firstItem is null)
             throw new ArgumentNullException(nameof(firstItem), "First item cannot be null");
 
         Add(firstItem);
-        AddRange(otherItems);
+
+        if (otherItems is not null && otherItems.Any())
+            AddRange(otherItems);
     }
 
     public new void Add(T item)
@@ -39,13 +42,22 @@ public class NonEmptyList<T> : List<T>, IEnumerable<T>
 
     public new void AddRange(IEnumerable<T> collection)
     {
-        //if (collection is null || !collection.Any())
-        //    throw new ArgumentNullException(nameof(collection), "Collection cannot be null");
+        if (collection is null || !collection.Any())
+            throw new ArgumentNullException(nameof(collection), "Collection cannot be null");
 
         base.AddRange(collection);
     }
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public static NonEmptyList<T> From(IEnumerable<T> enumerable)
+    {
+        if (enumerable is null || !enumerable.Any())
+            throw new ArgumentException("Cannot create a NonEmptyList from null or empty", nameof(enumerable));
+
+        T head = enumerable.First();
+        IEnumerable<T> tail = enumerable.Skip(1);
+
+        return new NonEmptyList<T>(head, tail);
+    }
 
     public override string ToString() => $"NonEmptyList: [{string.Join(", ", this)}]";
- }
+}

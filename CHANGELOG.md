@@ -1,1 +1,1 @@
-- Initial release
+- Add 'From' factory method to create a NonEmptyList from another IEnumerable
