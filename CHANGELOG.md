@@ -1,1 +1,5 @@
-- Add 'From' factory method to create a NonEmptyList from another IEnumerable
+- Throw an exception if `otherItems` contains null values.
+- Throw an exception if `AddRange` is called with an empty collection or a collection containing null values.
+- Prevent clearing the list by overriding `Clear` method to throw `NotSupportedException`.
+- Prevent removing the last item by overriding `Remove`, `RemoveAt`, and `RemoveRange` methods to throw `InvalidOperationException` when the list has only one item.
+- Added a `Deconstruct` method to deconstruct the list into its head and tail.
