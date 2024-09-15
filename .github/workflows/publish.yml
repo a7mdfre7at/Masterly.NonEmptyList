@@ -27,7 +27,7 @@ jobs:
       
       # Publish
       - name: publish on version change
-        uses: rohith/publish-nuget@v2
+        uses: alirezanet/publish-nuget@v3.0.4
         with:
           PROJECT_FILE_PATH: src/Masterly.NonEmptyList/Masterly.NonEmptyList.csproj # Relative to repository root
           VERSION_REGEX: <Version>(.*)<\/Version> # Regex pattern to extract version info in a capturing group
