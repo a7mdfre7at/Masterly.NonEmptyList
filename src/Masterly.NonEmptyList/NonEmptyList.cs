@@ -1088,7 +1088,7 @@ public class NonEmptyList<T> : List<T>, IReadOnlyList<T>, IEquatable<NonEmptyLis
         if (ReferenceEquals(this, other)) return true;
         if (Count != other.Count) return false;
 
-        return this.SequenceEqual(other, comparer);
+        return Enumerable.SequenceEqual(this, other, comparer);
     }
 
     /// <summary>

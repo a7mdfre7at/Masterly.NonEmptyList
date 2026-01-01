@@ -98,22 +98,29 @@ public static class NonEmptyListAsyncExtensions
         if (maxDegreeOfParallelism < 1)
             throw new ArgumentOutOfRangeException(nameof(maxDegreeOfParallelism), "Must be at least 1");
 
-        using SemaphoreSlim semaphore = new(maxDegreeOfParallelism);
-        Task<TResult>[] tasks = source.Select(async item =>
+        SemaphoreSlim semaphore = new(maxDegreeOfParallelism);
+        try
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-            try
+            Task<TResult>[] tasks = source.Select(item => Task.Run(async () =>
             {
-                return await selector(item).ConfigureAwait(false);
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        }).ToArray();
+                await semaphore.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    return await selector(item).ConfigureAwait(false);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            })).ToArray();
 
-        TResult[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
-        return new NonEmptyList<TResult>(results[0], results.Skip(1));
+            TResult[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
+            return new NonEmptyList<TResult>(results[0], results.Skip(1));
+        }
+        finally
+        {
+            semaphore.Dispose();
+        }
     }
 
     /// <summary>
