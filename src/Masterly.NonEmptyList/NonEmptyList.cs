@@ -61,15 +61,17 @@ public class NonEmptyList<T> : List<T>
         if (firstItem is null)
             throw new ArgumentNullException(nameof(firstItem), "First item cannot be null");
 
-        Add(firstItem);
+        base.Add(firstItem);
 
         if (otherItems is not null)
         {
-            if (otherItems.Any(item => item is null))
+            var items = otherItems as IList<T> ?? otherItems.ToList();
+
+            if (items.Any(item => item is null))
                 throw new ArgumentNullException(nameof(otherItems), "Other items cannot contain null values");
 
-            if (otherItems.Any())
-                AddRange(otherItems);
+            if (items.Count > 0)
+                base.AddRange(items);
         }
     }
 
@@ -96,15 +98,17 @@ public class NonEmptyList<T> : List<T>
     {
         ArgumentNullException.ThrowIfNull(collection);
 
-        if (!collection.Any())
+        var items = collection as IList<T> ?? collection.ToList();
+
+        if (items.Count == 0)
             throw new ArgumentException("Collection cannot be empty", nameof(collection));
 
-        if (collection.Any(item => item is null))
+        if (items.Any(item => item is null))
             throw new ArgumentNullException(nameof(collection), "Collection cannot contain null values");
 
         _cachedTail = null;  // Invalidate the cache when adding multiple items
 
-        base.AddRange(collection);
+        base.AddRange(items);
     }
 
     /// <summary>
@@ -115,11 +119,16 @@ public class NonEmptyList<T> : List<T>
     /// <exception cref="ArgumentException">Thrown if the enumerable is null or empty.</exception>
     public static NonEmptyList<T> From(IEnumerable<T> enumerable)
     {
-        if (enumerable is null || !enumerable.Any())
+        if (enumerable is null)
             throw new ArgumentException("Cannot create a NonEmptyList from null or empty", nameof(enumerable));
 
-        T head = enumerable.First();
-        IEnumerable<T> tail = enumerable.Skip(1);
+        var items = enumerable as IList<T> ?? enumerable.ToList();
+
+        if (items.Count == 0)
+            throw new ArgumentException("Cannot create a NonEmptyList from null or empty", nameof(enumerable));
+
+        T head = items[0];
+        IEnumerable<T> tail = items.Skip(1);
 
         return new NonEmptyList<T>(head, tail);
     }
@@ -131,6 +140,45 @@ public class NonEmptyList<T> : List<T>
     public override string ToString() => $"NonEmptyList: [{string.Join(", ", this)}]";
 
     /// <summary>
+    /// Inserts an item at the specified index in the NonEmptyList, ensuring the item is not null.
+    /// </summary>
+    /// <param name="index">The zero-based index at which item should be inserted.</param>
+    /// <param name="item">The item to insert.</param>
+    /// <exception cref="ArgumentNullException">Thrown if the item is null.</exception>
+    public new void Insert(int index, T item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        _cachedTail = null;  // Invalidate the cache when inserting an item
+
+        base.Insert(index, item);
+    }
+
+    /// <summary>
+    /// Inserts a range of items at the specified index in the NonEmptyList, ensuring no items are null.
+    /// </summary>
+    /// <param name="index">The zero-based index at which the new elements should be inserted.</param>
+    /// <param name="collection">The collection of items to insert.</param>
+    /// <exception cref="ArgumentNullException">Thrown if the collection is null or contains null values.</exception>
+    /// <exception cref="ArgumentException">Thrown if the collection is empty.</exception>
+    public new void InsertRange(int index, IEnumerable<T> collection)
+    {
+        ArgumentNullException.ThrowIfNull(collection);
+
+        var items = collection as IList<T> ?? collection.ToList();
+
+        if (items.Count == 0)
+            throw new ArgumentException("Collection cannot be empty", nameof(collection));
+
+        if (items.Any(item => item is null))
+            throw new ArgumentNullException(nameof(collection), "Collection cannot contain null values");
+
+        _cachedTail = null;  // Invalidate the cache when inserting items
+
+        base.InsertRange(index, items);
+    }
+
+    /// <summary>
     /// Clears the NonEmptyList. This operation is not supported as a NonEmptyList cannot be empty.
     /// </summary>
     /// <exception cref="NotSupportedException">Always thrown.</exception>
@@ -140,9 +188,12 @@ public class NonEmptyList<T> : List<T>
     /// Removes an item from the NonEmptyList, but ensures that the list is never empty.
     /// </summary>
     /// <param name="item">The item to remove.</param>
+    /// <exception cref="ArgumentNullException">Thrown if the item is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown if there is only one item in the list.</exception>
     public new void Remove(T item)
     {
+        ArgumentNullException.ThrowIfNull(item);
+
         if (Count == 1)
             throw new InvalidOperationException("Cannot use Remove method while the NonEmptyList contains only one item.");
 
@@ -174,7 +225,7 @@ public class NonEmptyList<T> : List<T>
     /// <exception cref="InvalidOperationException">Thrown if trying to remove all items from the list.</exception>
     public new void RemoveRange(int index, int count)
     {
-        if (index is 0 && Count == count)
+        if (Count - count < 1)
             throw new InvalidOperationException("Cannot remove all items from a NonEmptyList");
 
         _cachedTail = null;  // Invalidate the cache when removing multiple items

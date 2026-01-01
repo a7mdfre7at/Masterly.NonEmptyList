@@ -25,10 +25,10 @@ public partial class NonEmptyListTests
     }
 
     [Fact]
-    public void Remove_ShouldThrowException_WhenListHasNullItem()
+    public void Remove_ShouldThrowException_WhenRemovingNullItem()
     {
-        NonEmptyList<string> list = new("first", null);
-        Assert.Throws<InvalidOperationException>(() => list.Remove(null));
+        NonEmptyList<string> list = new("first", "second");
+        Assert.Throws<ArgumentNullException>(() => list.Remove(null!));
     }
 
     [Fact]
