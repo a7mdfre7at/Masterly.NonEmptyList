@@ -16,7 +16,7 @@ public partial class NonEmptyListTests
     public void Add_ShouldThrowException_WhenAddingNullItem()
     {
         NonEmptyList<string> list = new("first");
-        Assert.Throws<ArgumentNullException>(() => list.Add(null));
+        Assert.Throws<ArgumentNullException>(() => list.Add(null!));
     }
 
     [Fact]

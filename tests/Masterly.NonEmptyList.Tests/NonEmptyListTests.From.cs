@@ -22,5 +22,5 @@ public partial class NonEmptyListTests
 
     [Fact]
     public void From_ShouldThrowException_WhenEnumerableIsNull()
-        => Assert.Throws<ArgumentException>(() => NonEmptyList<int>.From(null));
+        => Assert.Throws<ArgumentException>(() => NonEmptyList<int>.From(null!));
 }

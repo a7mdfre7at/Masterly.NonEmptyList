@@ -23,6 +23,6 @@ public partial class NonEmptyListTests
     [Fact]
     public void Constructor_ShouldThrowException_WhenOtherItemsContainsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => new NonEmptyList<string>("1", null, "2", "3"));
+        Assert.Throws<ArgumentNullException>(() => new NonEmptyList<string>("1", null!, "2", "3"));
     }
 }

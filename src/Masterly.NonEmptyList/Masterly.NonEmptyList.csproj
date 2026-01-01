@@ -1,19 +1,43 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.2.2</Version>
+    <LangVersion>latest</LangVersion>
+    <Version>2.0.0</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
-    <Description>A simple and lightweight implementation of a non-empty list in C#, inspired by Scala's List, that ensures a collection always has at least one item. This helps in reducing null-related bugs and ensures safe operations on collections with at least one element.</Description>
+    <Description>A simple and lightweight implementation of a non-empty list in C#, inspired by Scala's List, that ensures a collection always has at least one item. This helps in reducing null-related bugs and ensures safe operations on collections with at least one element. Includes both mutable NonEmptyList and ImmutableNonEmptyList, functional programming operations (Map, FlatMap, Reduce, Fold, Zip), async extensions, and JSON serialization support.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
     <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>List;Data;Structure;NonEmpty;CSharp;DotNet;Masterly;Enumerable</PackageTags>
+    <PackageTags>List;Data;Structure;NonEmpty;CSharp;DotNet;Masterly;Enumerable;Immutable;Functional;Async</PackageTags>
     <PackageIcon>repo_image.png</PackageIcon>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReleaseNotes>
+v2.0.0:
+- Added ImmutableNonEmptyList&lt;T&gt; for immutable scenarios
+- Added functional programming operations: Map, MapWithIndex, FlatMap, Reduce, ReduceRight, Fold, FoldRight
+- Added Zip, ZipWith, ZipWithIndex operations
+- Added Partition and GroupByNonEmpty methods
+- Added pattern matching with Match method
+- Added collection operations: Concat, Prepend, ReverseList, DistinctList, DistinctBy
+- Added TakeNonEmpty, SkipNonEmpty, TakeAtLeastOne, Sliding, ChunkNonEmpty
+- Added Intersperse, RotateLeft, RotateRight operations
+- Added validation: RemoveAll override, SetRange, Validate, TryValidate
+- Added conversion methods: ToHashSet, ToDictionary, ToQueue, ToStack, ToLinkedList, AsSpan, AsMemory
+- Added utility methods: Random, MinBy, MaxBy, ForEachWithIndex
+- Added async extensions: MapAsync, MapParallelAsync, ForEachAsync, FilterAsync, FoldAsync
+- Added JSON serialization support with System.Text.Json
+- Added TryFrom factory method for safe creation
+- Added Singleton and Repeat factory methods
+- Added Init property (opposite of Tail)
+- Added indexer null validation
+- Implemented IEquatable&lt;T&gt; with proper equality operators
+- Multi-targeting: .NET 6.0 and .NET 8.0
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
