@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Version>2.0.0</Version>
+    <Authors>Ahmad Omar Al-Freihat</Authors>
+    <Description>Entity Framework Core integration for Masterly.NonEmptyList. Provides value converters, comparers, relationship configuration, and query extensions to seamlessly store and retrieve NonEmptyList and ImmutableNonEmptyList collections in your database.</Description>
+    <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>List;Data;Structure;NonEmpty;CSharp;DotNet;Masterly;EntityFramework;EFCore;ValueConverter;ORM</PackageTags>
+    <PackageIcon>repo_image.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReleaseNotes>
+v2.0.0:
+- Initial release of Entity Framework Core integration
+- NonEmptyListValueConverter and ImmutableNonEmptyListValueConverter for JSON serialization
+- NonEmptyListValueComparer and ImmutableNonEmptyListValueComparer for change tracking
+- HasNonEmptyListConversion and HasImmutableNonEmptyListConversion extension methods
+- One-to-many relationship configuration: HasNonEmptyMany, HasNonEmptyManyWithOne
+- Many-to-many relationship configuration: HasNonEmptyManyToMany
+- Cascade delete and required navigation configuration
+- SaveChanges validation interceptor via UseNonEmptyListValidation
+- Query extensions: ToNonEmptyList, ToNonEmptyListAsync, ToNonEmptyListOrNull
+- ApplyNonEmptyListConventions for auto-configuration
+- Multi-targeting: .NET 6.0 and .NET 8.0
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" Condition="'$(TargetFramework)' == 'net6.0'" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Masterly.NonEmptyList" Version="2.0.0" Condition="'$(Configuration)' == 'Release'" />
+  </ItemGroup>
+
+  <!-- Use project reference for Debug builds (local development) -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <ProjectReference Include="..\Masterly.NonEmptyList\Masterly.NonEmptyList.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.nuget.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Visible>False</Visible>
+    </None>
+    <None Include="..\..\repo_image.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Visible>False</Visible>
+    </None>
+    <None Include="..\..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+      <Visible>False</Visible>
+    </None>
+  </ItemGroup>
+
+</Project>
