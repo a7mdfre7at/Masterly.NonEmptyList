@@ -12,7 +12,7 @@
     <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>List;Data;Structure;NonEmpty;CSharp;DotNet;Masterly;Enumerable;Immutable;Functional;Async</PackageTags>
+    <PackageTags>NonEmptyList;non-empty-list;NonEmpty;List;Collection;ImmutableList;FunctionalProgramming;FP;CSharp;DotNet;Scala;TypeSafe;NullSafety;Head;Tail;Map;FlatMap;Reduce;Fold;LINQ;Enumerable</PackageTags>
     <PackageIcon>repo_image.png</PackageIcon>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

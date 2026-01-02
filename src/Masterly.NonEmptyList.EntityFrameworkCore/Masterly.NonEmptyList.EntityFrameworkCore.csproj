@@ -12,7 +12,7 @@
     <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>List;Data;Structure;NonEmpty;CSharp;DotNet;Masterly;EntityFramework;EFCore;ValueConverter;ORM</PackageTags>
+    <PackageTags>NonEmptyList;EntityFrameworkCore;EFCore;EntityFramework;ValueConverter;ValueComparer;ORM;Database;JSON;Collection;DotNet;CSharp;Persistence;DbContext;ModelBuilder</PackageTags>
     <PackageIcon>repo_image.png</PackageIcon>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -35,12 +35,15 @@ v2.0.0:
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" Condition="'$(TargetFramework)' == 'net6.0'" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" Condition="'$(TargetFramework)' == 'net8.0'" />
-    <PackageReference Include="Masterly.NonEmptyList" Version="2.0.0" Condition="'$(Configuration)' == 'Release'" />
   </ItemGroup>
 
-  <!-- Use project reference for Debug builds (local development) -->
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+  <!-- Use project reference for builds, NuGet package reference only when packing -->
+  <ItemGroup Condition="'$(IsPackaging)' != 'true'">
     <ProjectReference Include="..\Masterly.NonEmptyList\Masterly.NonEmptyList.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsPackaging)' == 'true'">
+    <PackageReference Include="Masterly.NonEmptyList" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

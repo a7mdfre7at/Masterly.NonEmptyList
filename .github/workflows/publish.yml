@@ -125,15 +125,19 @@ jobs:
             sleep 60
           done
 
-      - name: Publish Masterly.NonEmptyList.EntityFrameworkCore to NuGet
+      - name: Restore and Pack EF Core project
+        run: |
+          dotnet restore src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj -p:IsPackaging=true
+          dotnet pack src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj --configuration Release --no-restore -p:IsPackaging=true -o ./nupkg
+
+      - name: Push to NuGet
         id: publish_efcore
-        uses: alirezanet/publish-nuget@v3.1.0
-        with:
-          PROJECT_FILE_PATH: src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj
-          VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
-          TAG_COMMIT: false
-          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
-          INCLUDE_SYMBOLS: false
+        run: |
+          PACKAGE=$(ls ./nupkg/*.nupkg | head -1)
+          echo "Pushing $PACKAGE to NuGet..."
+          dotnet nuget push "$PACKAGE" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          VERSION=$(echo "$PACKAGE" | grep -oP '\d+\.\d+\.\d+')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
   create-release:
     name: Create GitHub Release
