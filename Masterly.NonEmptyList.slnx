@@ -1,0 +1,18 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj" />
+    <Project Path="src/Masterly.NonEmptyList/Masterly.NonEmptyList.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Masterly.NonEmptyList.EntityFrameworkCore.Tests/Masterly.NonEmptyList.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="tests/Masterly.NonEmptyList.Tests/Masterly.NonEmptyList.Tests.csproj" />
+  </Folder>
+</Solution>
