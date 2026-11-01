@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Version>3.0.0</Version>
+    <Authors>Ahmad Omar Al-Freihat</Authors>
+    <Description>ASP.NET Core integration for Masterly.NonEmptyList: OpenAPI schema transformer that emits minItems/minLength/uniqueItems for every non-empty type, Validation-to-HTTP result helpers that turn accumulated errors into RFC 7807 validation problem details, and ModelState helpers for MVC.</Description>
+    <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>NonEmptyList;AspNetCore;MinimalApi;OpenApi;Swagger;ProblemDetails;Validation;ModelBinding;DotNet;CSharp</PackageTags>
+    <PackageIcon>repo_image.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReleaseNotes>
+v3.0.0:
+- Initial release: AddNonEmptySchemas() OpenAPI transformer (.NET 9+), Validation.ToResult / ToValidationProblem, ModelState.AddErrors
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" Condition="'$(TargetFramework)' == 'net10.0'" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.13.0" Condition="'$(TargetFramework)' == 'net10.0'" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsPackaging)' != 'true'">
+    <ProjectReference Include="..\Masterly.NonEmptyList\Masterly.NonEmptyList.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsPackaging)' == 'true'">
+    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.nuget.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\repo_image.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>
