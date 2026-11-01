@@ -1,0 +1,45 @@
+# Masterly.NonEmptyList
+
+> Proof-carrying collections for .NET. `NonEmptyList<T>` is a list the type system guarantees has at least one element. Version 3 adds collection expressions, type-preserving LINQ, generic math, a constraint algebra, sibling types, an analyzer and a source generator, plus integration packages for ASP.NET Core, configuration, Newtonsoft.Json, MessagePack, Dapper, EF Core and testing.
+
+Namespace for everything in the core package: `Masterly.NonEmptyList`. Install: `dotnet add package Masterly.NonEmptyList`. Targets .NET 8, 9 and 10.
+
+## Core types and the members to reach for
+
+- `NonEmptyList<T>`: `Head`, `Last`, `Tail` (nullable), `Init` (nullable), `Count`, indexer, `Slice`, ranges. Mutable, but `Clear`/`Remove`/`RemoveAt` can never empty it (they throw). Create with `[1, 2, 3]`, `NonEmptyList.Of(a, b)`, `NonEmptyList<T>.From(seq)`, `TryFrom`, `new NonEmptyList<T>(seq)`, `seq.ToNonEmptyList()`.
+- LINQ on a `NonEmptyList<T>` stays a `NonEmptyList<T>`: `Select`, `SelectMany`, `OrderBy`, `ThenBy`, `GroupBy`, `Distinct`, `Union`, `Concat`, `Chunk`, `Max`, `Min` (non-nullable). `Where`, `Skip`, `Take` return `IEnumerable<T>` because they may be empty.
+- Prefer `Head` over `First()`, `Last` over `Last()`, `Reduce(f)` over `Aggregate(f)`, `Count` over `Count()`. Never write `xs.Any()` or `xs.Count == 0` on a non-empty list; the analyzer flags both.
+- Math without an empty path: `Sum`, `Product`, `Average`, `Median`, `Mode`, `MinMax`. Works for any `System.Numerics` type.
+- Functional: `Map`, `FlatMap`, `Fold`, `Reduce`, `Scan`, `Zip`, `Unzip`, `Tails`, `Inits`, `Match(single, multiple)`, deconstruction `var (head, tail) = xs`.
+- `ImmutableNonEmptyList<T>`: same guarantees, returns new instances; `[1, 2]` works too.
+- `ConstrainedList<T, TConstraint>`: immutable list whose contents satisfy a type-level constraint. Constraints: `NonEmpty`, `AtLeast<Two>`, `AtMost<Ten>`, `Exactly<Three>`, `Distinct`, `Sorted`, `SortedDescending`, `And<A, B>`, `Or<A, B>`. `Second()`/`Third()` compile only when the constraint proves them. `From`, `TryFrom`, `Validate(items, path)`.
+- `NonEmptySet<T>`, `NonEmptyDictionary<TKey, TValue>`, `NonEmptyString` (never blank, implicit to `string`), `NonEmptySpan<T>` (ref struct).
+- `Validation<T, TError>`: valid value or `NonEmptyList<TError>`. `Validation.Combine(v1, v2, ..., (a, b) => result)` accumulates errors; `Sequence`, `Traverse`, `Ensure`, `NotBlank`, `NotNull`, `NonEmpty`. `ValidationError(Code, Message, Path)` and `errors.ToErrorDictionary()`.
+- `NonEmptyZipper<T>` (`Focus`, `MoveLeft()`/`MoveRight()` return null at the ends), `History<T>` (`Push`, `Undo`, `Redo`, `Current`), `EventStream<TEvent>` (`Start(origin)`, `Append`, `Replay(create, apply)`, `Origin`, `Version`), `NonEmptyTree<T>` (`Flatten`, `Leaves`, `PathsToLeaves`, `Fold`, `Map`), `NonEmptyEnumerable<T>` (lazy/infinite: `NonEmptyList.Iterate(seed, next).Take(10)`).
+- Async: `stream.BatchNonEmpty(size)`, `stream.BatchNonEmpty(size, maxWait)`, `channel.Reader.ReadAllBatchesAsync()`, `await stream.ToNonEmptyAsync()` returning `NonEmptyAsyncEnumerable<T>?` with `Head` and `Rest`.
+- Binding: `NonEmptyList<T>`, `NonEmptySet<T>` and `NonEmptyString` bind from query strings and route values in minimal APIs and MVC; empty input is a 400. System.Text.Json converters are built in.
+
+## Analyzer and generator (bundled in the core package)
+
+- NEL001 `[]` assigned to a non-empty type (error). NEL002 factory called with a provably empty argument (error). NEL003 throwing LINQ on a non-empty list (info, fix). NEL004 redundant emptiness check (info, fix). NEL005 opt-in: throwing operator on an unproven `IEnumerable<T>` (fix wraps in `ToNonEmptyList()`).
+- `[NonEmptyCollection(typeof(T), Distinct = true, MaxCount = 500, MinCount = 1, Immutable = false)] public sealed partial class OrderLines;` generates a domain collection deriving from `NonEmptyList<T>` with factories, JSON converter and enforced invariants.
+
+## Integration packages
+
+- `Masterly.NonEmptyList.EntityFrameworkCore`: `options.UseNonEmptyList()`, `HasNonEmptyListConversion()`, `HasNonEmptyManyWithOne`. Required for LINQ on non-empty navigations inside queries.
+- `Masterly.NonEmptyList.AspNetCore`: `AddOpenApi(o => o.AddNonEmptySchemas())`, `validation.ToResult()`, `errors.ToValidationProblem()`, `ModelState.AddErrors(errors)`.
+- `Masterly.NonEmptyList.Configuration`: `configuration.GetNonEmptyList<T>("Key")`, `services.AddNonEmptyOptions<TOptions>("Section")` fails at startup when a required collection is empty.
+- `Masterly.NonEmptyList.NewtonsoftJson`: `settings.AddNonEmptyConverters()`.
+- `Masterly.NonEmptyList.MessagePack`: `MessagePackSerializerOptions.Standard.WithNonEmptyResolver()`.
+- `Masterly.NonEmptyList.Dapper`: `NonEmptyDapper.AddTypeHandlers<T>()`, `AddNonEmptyStringHandler()`.
+- `Masterly.NonEmptyList.Testing`: `NonEmptyGen.List(Gen.Int)` for CsCheck, `new NonEmptyCustomization()` for AutoFixture, `NonEmptyListLaws.CheckAll(xs)`.
+
+## Migration from 2.x
+
+`NonEmptyList<T>` no longer derives from `List<T>` (accept `IList<T>`/`IReadOnlyList<T>` or call `.ToList()`; the bundled code fix does this). `Prepend` returns a new list, `AddFirst` mutates. `Remove` returns `bool`. .NET 6 is no longer targeted.
+
+## Links
+
+- Repository: https://github.com/a7mdfre7at/Masterly.NonEmptyList
+- Analyzer rules: https://github.com/a7mdfre7at/Masterly.NonEmptyList/blob/master/docs/analyzers.md
+- Changelog: https://github.com/a7mdfre7at/Masterly.NonEmptyList/blob/master/CHANGELOG.md

@@ -1,3 +1,56 @@
+# Changelog
+
+## 3.0.0
+
+### Breaking changes
+- `NonEmptyList<T>` no longer inherits from `List<T>`. It wraps its storage and implements `IList<T>`, `IReadOnlyList<T>` and `IList`, so the non-empty guarantee now holds through every interface. In v2, `((IList<T>)list).Clear()` emptied the list.
+- `Prepend(item)` returns a new list (LINQ semantics). Use `AddFirst(item)` to insert in place.
+- `Remove(item)` returns `bool` like `List<T>` and returns `false` for absent items instead of throwing.
+- `AsReadOnly()` returns `ReadOnlyCollection<T>`.
+- `TryValidate` annotates its out parameter with `[MaybeNullWhen(true)]`.
+- Dropped the .NET 6 target. Targets are .NET 8, .NET 9 and .NET 10.
+- EF Core package: call `.UseNonEmptyList()` on your `DbContextOptionsBuilder` to translate NonEmptyList LINQ inside queries.
+
+### Added
+- Collection expressions for `NonEmptyList<T>` and `ImmutableNonEmptyList<T>`: `NonEmptyList<int> xs = [1, 2, 3];`. An empty expression throws `ArgumentException`.
+- List patterns and range indexing: `xs is [var head, .. var rest]`, `xs[1..]`, `xs[^1]`, `Slice`.
+- Non-generic `NonEmptyList` and `ImmutableNonEmptyList` factories with type inference: `Of`, `Create`, `From`, `TryFrom`, `Singleton`, `Repeat`, `Range`, `Iterate`, `Unfold`, `UnfoldValue`.
+- `params ReadOnlySpan<T>` constructors and `FromSpan`.
+- Type-preserving LINQ (`NonEmptyListLinqExtensions`): `Select`, `SelectMany`, `OrderBy`, `OrderByDescending`, `ThenBy`, `ThenByDescending`, `Order`, `OrderDescending`, `GroupBy` (returns `NonEmptyGrouping<TKey, T>`), `Distinct`, `Union`, `Concat`, `Chunk`, `Flatten`, `Unzip`, `Interleave`, `Cycle`, `Max`, `Min`, `MinMax`, `ToNonEmptyList`, `ToNonEmptyListOrNull`, `TryToNonEmptyList`. Query syntax is supported. `OrderedNonEmptyList<T>` implements `IOrderedEnumerable<T>`.
+- Generic math (`NonEmptyListMathExtensions`): `Sum`, `Product`, `Average`, `Median`, `Mode`, with LINQ-compatible result types for integers.
+- `ISpanParsable<NonEmptyList<T>>` and `NonEmptyListTypeConverter`: bind from query strings and route values in ASP.NET Core; comma-separated parsing with culture support for any `ISpanParsable`, `IParsable`, enum or `TypeConverter`-backed element type.
+- `Validation<T, TError>` with `Combine` (2 to 8 inputs), `Sequence`, `Traverse`, `Map`, `MapErrors`, `Bind`, `Ensure`, `Match`, `NotNull`, `HasValue`, `NotBlank`, `NonEmpty`, plus the `ValidationError` record and `ToErrorDictionary()` for problem details.
+- New operators: `Scan`, `Tails`, `Inits`, `Append`, `AddFirst`, `ConvertAll`, `Capacity`, `Find`, `FindAll`, `FindIndex`, `Exists`, `TrueForAll`, `BinarySearch`, `GetRange`, `Sort`, `Reverse` (in place), `TrimExcess`, `EnsureCapacity`.
+- `[NotNullWhen(true)]` on `TryFrom`, `DebuggerDisplay` and a debugger type proxy, `MinBy`/`MaxBy` comparer overloads.
+- EF Core: `NonEmptyListQueryExpressionInterceptor`, `UseNonEmptyList()`, `UseNonEmptyListQueryTranslation()`. `Count`, `Head`, `First` and `Last` on NonEmptyList navigations translate to `Count()`, `First()` and `Last()`.
+- Constraint algebra: `ConstrainedList<T, TConstraint>` with `NonEmpty`, `AtLeast<N>`, `AtMost<N>`, `Exactly<N>`, `Distinct`, `Sorted`, `SortedDescending`, `And<A, B>`, `Or<A, B>` and cardinalities `One` to `Ten`, `Sixteen`, `ThirtyTwo`, `SixtyFour`, `Hundred`, `Thousand`. `Second()` and `Third()` exist only when the constraint proves them. `Validate` produces a `Validation` with the failing rule. Collection expressions and System.Text.Json supported.
+- `NonEmptySet<T>` (guarded `ISet<T>` with `Parse`/`TryParse`), `NonEmptyDictionary<TKey, TValue>` (guarded `IDictionary<TKey, TValue>`), `NonEmptyString` (never blank; implicit to `string`, `ISpanParsable`, `TypeConverter`, JSON property-name support), `NonEmptySpan<T>` (stack-only view with `Head`, `Max`, `Sum`).
+- `NonEmptyZipper<T>` (cursor that always points at an element) and `History<T>` (undo/redo that never loses the current state).
+- `EventStream<TEvent>` with a guaranteed origin: `Replay`, `ReplayHistory`, `Since`, `UpTo`, `Version`.
+- `NonEmptyTree<T>` rose tree: `Flatten`, `FlattenPostOrder`, `FlattenBreadthFirst`, `Leaves`, `PathsToLeaves`, `Levels`, `Fold`, `Map`, `Find`, `PathTo`, `PruneChildren`, `Unfold`, `FromParentKeys`.
+- `NonEmptyEnumerable<T>`: lazy, possibly infinite sequence with a known head. `NonEmptyList.Iterate(seed, next)` and `Cycle()` return it; `Take(n)`, `TakeWhile`, `TakeUntil` return a `NonEmptyList<T>`.
+- Async batching: `BatchNonEmpty(size)` for sequences and async streams, `BatchNonEmpty(size, maxWait)` with a timer that only starts once an element is waiting, `ReadAllBatchesAsync` for channels, `ToNonEmptyAsync` returning `NonEmptyAsyncEnumerable<T>` (head in memory, rest streaming).
+- `NonEmptyList(IEnumerable<T>)` and `ImmutableNonEmptyList(IEnumerable<T>)` constructors.
+- Protected invariant hooks on `NonEmptyList<T>`: `IsReadOnly`, `EnsureMutable`, `ValidateItem`, `ValidateRange`, `ValidateReplacement`, `ValidateCount`, and a protected copy constructor, so derived types can add invariants without reimplementing the list.
+- Roslyn analyzers bundled in the main package: NEL001 empty collection expression, NEL002 provably empty factory argument, NEL003 throwing LINQ on a non-empty list (fix to `Head`/`Last`/`Reduce`/`Count`), NEL004 redundant emptiness check (fix to constant), NEL005 opt-in unproven sequence (fix wraps in `ToNonEmptyList()`), plus a migration fix offering `.ToList()` for CS1503/CS0029/CS0266. See `docs/analyzers.md`.
+- `[NonEmptyCollection]` source generator for domain collections: constructors, `From`/`Of`/`Create`/`TryFrom`/`Satisfies`/`Validate`, collection expressions, JSON converter, `DebuggerDisplay`, and `Distinct`/`MinCount`/`MaxCount`/`Immutable` enforced on every mutation.
+
+### New packages
+- `Masterly.NonEmptyList.Configuration`: `GetNonEmptyList` and friends on `IConfiguration`, `BindNonEmptyConfiguration` / `AddNonEmptyOptions` for options classes; required non-empty properties fail at startup naming the key.
+- `Masterly.NonEmptyList.AspNetCore`: OpenAPI schema transformer (`minItems`, `maxItems`, `uniqueItems`, `minLength`, `minProperties`, array/items shape), `Validation` to `IResult`/`ActionResult`/problem details, `ModelState.AddErrors`, `NonEmptyShape`.
+- `Masterly.NonEmptyList.NewtonsoftJson`: one converter for every non-empty type.
+- `Masterly.NonEmptyList.MessagePack`: formatters and `NonEmptyResolver`.
+- `Masterly.NonEmptyList.Dapper`: JSON type handlers and `NonEmptyString` handler.
+- `Masterly.NonEmptyList.Testing`: CsCheck generators (`NonEmptyGen`), AutoFixture customization, `NonEmptyListLaws`.
+
+### Changed
+- `Tail`, `Init`, `Map`, `Reduce`, `Fold`, `Zip`, `Rotate*`, `Sliding`, `ChunkNonEmpty` no longer go through LINQ and allocate less.
+- `MinBy` and `MaxBy` run in O(n) instead of sorting.
+- `Random()` uses `Random.Shared`.
+- Tail and Init caches are now invalidated on every mutation path, including interface calls.
+
+## 2.0.0
+
 ## Added
 
 ### New Types
