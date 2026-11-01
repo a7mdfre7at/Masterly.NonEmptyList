@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>2.0.0</Version>
+    <Version>3.0.0</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
     <Description>Entity Framework Core integration for Masterly.NonEmptyList. Provides value converters, comparers, relationship configuration, and query extensions to seamlessly store and retrieve NonEmptyList and ImmutableNonEmptyList collections in your database.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
@@ -17,6 +17,10 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReleaseNotes>
+v3.0.0:
+- Built against Masterly.NonEmptyList 3.0 (composition-based NonEmptyList)
+- Targets .NET 8, 9 and 10 with matching EF Core versions
+
 v2.0.0:
 - Initial release of Entity Framework Core integration
 - NonEmptyListValueConverter and ImmutableNonEmptyListValueConverter for JSON serialization
@@ -28,13 +32,14 @@ v2.0.0:
 - SaveChanges validation interceptor via UseNonEmptyListValidation
 - Query extensions: ToNonEmptyList, ToNonEmptyListAsync, ToNonEmptyListOrNull
 - ApplyNonEmptyListConventions for auto-configuration
-- Multi-targeting: .NET 6.0 and .NET 8.0
+- Multi-targeting: .NET 8.0, 9.0 and 10.0
     </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" Condition="'$(TargetFramework)' == 'net6.0'" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" Condition="'$(TargetFramework)' == 'net10.0'" />
   </ItemGroup>
 
   <!-- Use project reference for builds, NuGet package reference only when packing -->
@@ -43,7 +48,7 @@ v2.0.0:
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsPackaging)' == 'true'">
-    <PackageReference Include="Masterly.NonEmptyList" Version="2.0.0" />
+    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>

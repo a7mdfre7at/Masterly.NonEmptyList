@@ -24,6 +24,7 @@ public class NonEmptyListManyToManyTests
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseNonEmptyList()
             .Options;
 
         using var context = new TestDbContext(options);
@@ -54,6 +55,7 @@ public class NonEmptyListManyToManyTests
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseNonEmptyList()
             .Options;
 
         using var context = new TestDbContext(options);
@@ -98,6 +100,7 @@ public class NonEmptyListManyToManyTests
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseNonEmptyList()
             .Options;
 
         using var context = new TestDbContext(options);
@@ -124,6 +127,7 @@ public class NonEmptyListManyToManyTests
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseNonEmptyList()
             .Options;
 
         using var context = new TestDbContext(options);
@@ -164,6 +168,7 @@ public class NonEmptyListManyToManyTests
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseNonEmptyList()
             .Options;
 
         using var context = new TestDbContext(options);
@@ -217,6 +222,7 @@ public class NonEmptyListManyToManyTests
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseNonEmptyList()
             .Options;
 
         using var context = new TestDbContext(options);
@@ -257,6 +263,7 @@ public class NonEmptyListManyToManyTests
 
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseNonEmptyList()
             .Options;
 
         using var context = new TestDbContext(options);

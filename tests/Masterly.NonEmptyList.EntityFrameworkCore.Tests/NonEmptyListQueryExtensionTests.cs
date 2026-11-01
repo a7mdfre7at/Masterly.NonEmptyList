@@ -52,7 +52,7 @@ public class NonEmptyListQueryExtensionTests
         });
 
         await using var context = new TestDbContext(options);
-        var result = await context.EntitiesWithTags.ToNonEmptyListAsync();
+        var result = await context.EntitiesWithTags.ToNonEmptyListAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(result);
     }
@@ -65,7 +65,7 @@ public class NonEmptyListQueryExtensionTests
         await using var context = new TestDbContext(options);
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await context.EntitiesWithTags.ToNonEmptyListAsync());
+            await context.EntitiesWithTags.ToNonEmptyListAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class NonEmptyListQueryExtensionTests
         });
 
         await using var context = new TestDbContext(options);
-        var (success, result) = await context.EntitiesWithTags.TryToNonEmptyListAsync();
+        var (success, result) = await context.EntitiesWithTags.TryToNonEmptyListAsync(TestContext.Current.CancellationToken);
 
         Assert.True(success);
         Assert.NotNull(result);
@@ -117,7 +117,7 @@ public class NonEmptyListQueryExtensionTests
         var options = CreateOptionsWithData(_ => { });
 
         await using var context = new TestDbContext(options);
-        var (success, result) = await context.EntitiesWithTags.TryToNonEmptyListAsync();
+        var (success, result) = await context.EntitiesWithTags.TryToNonEmptyListAsync(TestContext.Current.CancellationToken);
 
         Assert.False(success);
         Assert.Null(result);
@@ -158,7 +158,7 @@ public class NonEmptyListQueryExtensionTests
         });
 
         await using var context = new TestDbContext(options);
-        var result = await context.EntitiesWithTags.ToNonEmptyListOrNullAsync();
+        var result = await context.EntitiesWithTags.ToNonEmptyListOrNullAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -169,7 +169,7 @@ public class NonEmptyListQueryExtensionTests
         var options = CreateOptionsWithData(_ => { });
 
         await using var context = new TestDbContext(options);
-        var result = await context.EntitiesWithTags.ToNonEmptyListOrNullAsync();
+        var result = await context.EntitiesWithTags.ToNonEmptyListOrNullAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(result);
     }
@@ -209,7 +209,7 @@ public class NonEmptyListQueryExtensionTests
         });
 
         await using var context = new TestDbContext(options);
-        var result = await context.EntitiesWithTags.ToImmutableNonEmptyListAsync();
+        var result = await context.EntitiesWithTags.ToImmutableNonEmptyListAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(result);
     }
@@ -234,7 +234,7 @@ public class NonEmptyListQueryExtensionTests
         });
 
         await using var context = new TestDbContext(options);
-        var result = await context.EntitiesWithTags.ToImmutableNonEmptyListOrNullAsync();
+        var result = await context.EntitiesWithTags.ToImmutableNonEmptyListOrNullAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }

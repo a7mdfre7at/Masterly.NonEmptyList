@@ -41,7 +41,7 @@ public class NonEmptyListSaveChangesInterceptorTests
         };
 
         context.EntitiesWithTags.Add(entity);
-        int result = await context.SaveChangesAsync();
+        int result = await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, result);
     }

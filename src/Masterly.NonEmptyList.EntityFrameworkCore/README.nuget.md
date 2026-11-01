@@ -14,10 +14,35 @@ dotnet add package Masterly.NonEmptyList.EntityFrameworkCore
 - **Change Tracking**: Proper change detection with custom value comparers
 - **Relationship Support**: Configure one-to-many and many-to-many relationships
 - **Validation Interceptor**: Ensure non-empty constraints on save
+- **Query Translation**: Use NonEmptyList LINQ (`Select`, `OrderBy`, `Sum`, `Count`, `Head`, ...) inside EF Core projections
 - **Query Extensions**: Convert query results to `NonEmptyList<T>`
 - **Auto-Configuration**: Convention-based setup for all properties
 
 ## Quick Start
+
+### Register once
+
+```csharp
+services.AddDbContext<ShopContext>(options =>
+    options
+        .UseSqlServer(connectionString)
+        .UseNonEmptyList());   // SaveChanges validation + query translation
+```
+
+`UseNonEmptyList()` is required in v3 if you use LINQ on `NonEmptyList<T>` navigation properties inside queries. It rewrites the type-preserving operators back to `Enumerable` before EF Core compiles the query, so they translate exactly like `List<T>`.
+
+```csharp
+var summaries = await context.Orders
+    .Select(o => new
+    {
+        o.Id,
+        Total = o.Items.Sum(i => i.Price),
+        Count = o.Items.Count,
+        FirstSku = o.Items.Head.Sku,
+        Names = o.Items.OrderBy(i => i.Price).Select(i => i.Name).ToList(),
+    })
+    .ToListAsync();
+```
 
 ### JSON Value Conversion
 
