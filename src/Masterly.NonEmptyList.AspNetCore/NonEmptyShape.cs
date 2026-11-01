@@ -89,15 +89,20 @@ public sealed record NonEmptyShape(Type ElementType, bool IsDictionary, int MinI
         return (1, null, false);
     }
 
+    private static readonly MethodInfo CardinalityValueGetter = typeof(ICardinality).GetProperty(nameof(ICardinality.Value))!.GetMethod!;
+
+    // Goes through the interface map so an explicit implementation (static int ICardinality.Value) is found too.
     private static int Cardinality(Type cardinality)
     {
-        PropertyInfo? value = cardinality.GetProperty("Value", BindingFlags.Public | BindingFlags.Static);
-        return value?.GetValue(null) is int n ? n : 1;
+        InterfaceMapping map = cardinality.GetInterfaceMap(typeof(ICardinality));
+        MethodInfo getter = map.TargetMethods[Array.IndexOf(map.InterfaceMethods, CardinalityValueGetter)];
+        return (int)getter.Invoke(null, null)!;
     }
 
+    // GetValue rather than GetRawConstantValue: the latter throws for a static readonly field.
     private static int? ReadConst(Type type, string name)
-        => type.GetField(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetRawConstantValue() as int?;
+        => type.GetField(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetValue(null) as int?;
 
     private static bool? ReadConstBool(Type type, string name)
-        => type.GetField(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetRawConstantValue() as bool?;
+        => type.GetField(name, BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetValue(null) as bool?;
 }

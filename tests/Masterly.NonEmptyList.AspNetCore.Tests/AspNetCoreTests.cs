@@ -18,6 +18,8 @@ public sealed record CreateOrder(NonEmptyList<string> Lines, string Customer);
 
 public sealed record Order(NonEmptyList<string> Lines, NonEmptyString Customer);
 
+public sealed record Quota(NonEmptyDictionary<string, int> Limits, ConstrainedList<int, AtMost<Three>> Top);
+
 [ApiController]
 [Route("mvc")]
 public sealed class MvcController : ControllerBase
@@ -77,6 +79,7 @@ public class AspNetCoreTests : IAsyncLifetime
         _app.MapPost("/orders/async-map", (CreateOrder request) => Task.FromResult(Validate(request)).ToResultAsync(o => Results.Accepted(null, o.Lines.Count)));
         _app.MapPost("/echo", (Order order) => Results.Ok(order));
         _app.MapGet("/schema/{kind}", (string kind) => Results.Ok(kind));
+        _app.MapPost("/quota", (Quota quota) => Results.Ok(quota.Limits.Count));
 
         await _app.StartAsync();
         _client = _app.GetTestClient();
@@ -225,6 +228,71 @@ public class AspNetCoreTests : IAsyncLifetime
         Assert.Null(NonEmptyShape.Of(typeof(string)));
     }
 
+    [Fact]
+    public void NonEmptyShape_ShouldCombineBoundsOfAndAndOrConstraints()
+    {
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 2, 3, false), NonEmptyShape.Of(typeof(ConstrainedList<int, And<AtMost<Three>, AtLeast<Two>>>)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 1, 3, false), NonEmptyShape.Of(typeof(ConstrainedList<int, And<AtMost<Five>, AtMost<Three>>>)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 1, 5, false), NonEmptyShape.Of(typeof(ConstrainedList<int, Or<AtMost<Two>, AtMost<Five>>>)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 1, null, false), NonEmptyShape.Of(typeof(ConstrainedList<int, Or<AtMost<Two>, Sorted>>)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 2, null, true), NonEmptyShape.Of(typeof(ConstrainedList<int, Or<And<Distinct, AtLeast<Two>>, And<Distinct, AtLeast<Three>>>>)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 1, null, false), NonEmptyShape.Of(typeof(ConstrainedList<int, EvenCount<Two>>)));
+        Assert.Throws<ArgumentNullException>(() => NonEmptyShape.Of(null!));
+    }
+
+    [Fact]
+    public void NonEmptyShape_ShouldReadACardinalityThatImplementsValueExplicitly()
+    {
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 12, null, false), NonEmptyShape.Of(typeof(ConstrainedList<int, AtLeast<Twelve>>)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 12, 12, false), NonEmptyShape.Of(typeof(ConstrainedList<int, Exactly<Twelve>>)));
+    }
+
+    [Fact]
+    public void NonEmptyShape_ShouldReadTheBoundsOfGeneratedCollections()
+    {
+        Assert.Equal(new NonEmptyShape(typeof(string), false, 2, 5, true), NonEmptyShape.Of(typeof(Crew)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 1, null, false), NonEmptyShape.Of(typeof(Unbounded)));
+        Assert.Equal(new NonEmptyShape(typeof(int), false, 3, null, false), NonEmptyShape.Of(typeof(Roster)));
+    }
+
+    [Fact]
+    public void MvcHelpers_ShouldMapValidAndInvalidResults()
+    {
+        Validation<int, ValidationError> valid = Validation.Valid<int, ValidationError>(5);
+        Validation<int, ValidationError> invalid = Validation.Invalid<int, ValidationError>(new ValidationError("bad", "Bad value"));
+        ModelStateDictionary modelState = new();
+
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(valid.ToActionResult());
+        BadRequestObjectResult bad = Assert.IsType<BadRequestObjectResult>(invalid.ToActionResult());
+
+        Assert.Equal(5, ok.Value);
+        HttpValidationProblemDetails details = Assert.IsType<HttpValidationProblemDetails>(bad.Value);
+        Assert.Equal(new[] { "Bad value" }, details.Errors[string.Empty]);
+        Assert.False(invalid.TryGetValue(modelState, out _));
+        Assert.Equal("Bad value", modelState[string.Empty]!.Errors[0].ErrorMessage);
+        Assert.True(valid.TryGetValue(modelState, out int value));
+        Assert.Equal(5, value);
+    }
+
+    [Fact]
+    public async Task Helpers_ShouldRejectNullArguments()
+    {
+        Validation<int, ValidationError> valid = Validation.Valid<int, ValidationError>(1);
+        NonEmptyList<ValidationError> errors = NonEmptyList.Of(new ValidationError("c", "m"));
+
+        Assert.Throws<ArgumentNullException>(() => ((NonEmptyList<ValidationError>)null!).ToValidationProblem());
+        Assert.Throws<ArgumentNullException>(() => valid.ToResult(null!));
+        Assert.Throws<ArgumentNullException>(() => valid.ToCreatedResult(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => ((Task<Validation<int, ValidationError>>)null!).ToResultAsync());
+        await Assert.ThrowsAsync<ArgumentNullException>(() => ((Task<Validation<int, ValidationError>>)null!).ToResultAsync(_ => Results.Ok()));
+        Assert.Throws<ArgumentNullException>(() => ((Validation<int, ValidationError>)null!).ToActionResult(_ => new OkResult()));
+        Assert.Throws<ArgumentNullException>(() => valid.ToActionResult(null!));
+        Assert.Throws<ArgumentNullException>(() => ((ModelStateDictionary)null!).AddErrors(errors));
+        Assert.Throws<ArgumentNullException>(() => new ModelStateDictionary().AddErrors(null!));
+        Assert.Throws<ArgumentNullException>(() => ((Validation<int, ValidationError>)null!).TryGetValue(new ModelStateDictionary(), out _));
+        Assert.Throws<ArgumentNullException>(() => valid.TryGetValue(null!, out _));
+    }
+
 #if NET9_0_OR_GREATER
     [Fact]
     public async Task OpenApi_ShouldDocumentMinItemsAndMinLength()
@@ -302,5 +370,104 @@ public class AspNetCoreTests : IAsyncLifetime
         Assert.Equal(1, dictionary.MinProperties);
         Assert.Null(plain.MinItems);
     }
+
+    [Fact]
+    public void SchemaTransformer_Apply_ShouldKeepStricterExistingBoundsAndHandleNullableTypes()
+    {
+        var bounded = new Microsoft.OpenApi.OpenApiSchema();
+        var tighter = new Microsoft.OpenApi.OpenApiSchema { MinItems = 4, MaxItems = 2, MinLength = 3 };
+        var nullableText = new Microsoft.OpenApi.OpenApiSchema();
+
+        NonEmptyOpenApiSchemaTransformer.Apply(bounded, typeof(ConstrainedList<int, AtMost<Three>>));
+        NonEmptyOpenApiSchemaTransformer.Apply(tighter, typeof(ConstrainedList<int, AtMost<Three>>));
+        NonEmptyOpenApiSchemaTransformer.Apply(nullableText, typeof(NonEmptyString?));
+
+        Assert.Equal(1, bounded.MinItems);
+        Assert.Equal(3, bounded.MaxItems);
+        Assert.Null(bounded.UniqueItems);
+        Assert.Equal(4, tighter.MinItems);
+        Assert.Equal(2, tighter.MaxItems);
+        Assert.Equal(1, nullableText.MinLength);
+        Assert.Throws<ArgumentNullException>(() => NonEmptyOpenApiSchemaTransformer.Apply(null!, typeof(int)));
+        Assert.Throws<ArgumentNullException>(() => NonEmptyOpenApiSchemaTransformer.Apply(bounded, null!));
+        Assert.Throws<ArgumentNullException>(() => ((Microsoft.AspNetCore.OpenApi.OpenApiOptions)null!).AddNonEmptySchemas());
+    }
+
+    [Fact]
+    public async Task OpenApi_ShouldDescribeNonEmptyDictionariesAsObjectsWithAtLeastOneProperty()
+    {
+        string json = await _client.GetStringAsync("/openapi/v1.json");
+        JsonDocument document = JsonDocument.Parse(json);
+
+        JsonElement quota = document.RootElement.GetProperty("components").GetProperty("schemas").GetProperty("Quota").GetProperty("properties");
+        JsonElement limits = Resolve(quota.GetProperty("limits"));
+        JsonElement top = Resolve(quota.GetProperty("top"));
+
+        Assert.True(HasType(limits, "object"), json);
+        Assert.Equal(1, limits.GetProperty("minProperties").GetInt32());
+        Assert.True(HasType(Resolve(limits.GetProperty("additionalProperties")), "integer"), json);
+        Assert.True(HasType(top, "array"), json);
+        Assert.Equal(3, top.GetProperty("maxItems").GetInt32());
+
+        // OpenAPI 3.1 writes "type" as a string or, for nullable schemas, as an array of strings.
+        static bool HasType(JsonElement schema, string expected)
+            => schema.TryGetProperty("type", out JsonElement type)
+               && (type.ValueKind == JsonValueKind.String ? type.GetString() == expected : type.EnumerateArray().Any(t => t.GetString() == expected));
+
+        JsonElement Resolve(JsonElement schema)
+            => schema.TryGetProperty("$ref", out JsonElement reference)
+                ? document.RootElement.GetProperty("components").GetProperty("schemas").GetProperty(reference.GetString()!["#/components/schemas/".Length..])
+                : schema;
+    }
 #endif
 }
+
+/// <summary>A cardinality that implements <see cref="ICardinality.Value"/> explicitly.</summary>
+public readonly struct Twelve : ICardinality
+{
+    static int ICardinality.Value => 12;
+}
+
+/// <summary>A user-defined generic constraint the shape analysis knows nothing about.</summary>
+public readonly struct EvenCount<TCount> : IListConstraint where TCount : ICardinality
+{
+    public static bool Holds<T>(ReadOnlySpan<T> items) => items.Length % 2 == 0;
+
+    public static string Describe() => "an even number of items";
+}
+
+#pragma warning disable CA2260 // derived collections are a legitimate use of NonEmptyList<T> as a base
+/// <summary>Shaped like a <c>[NonEmptyCollection(MinCount = 2, MaxCount = 5, Distinct = true)]</c>-generated class.</summary>
+public sealed class Crew : NonEmptyList<string>
+{
+    public const int MinCount = 2;
+    public const int MaxCount = 5;
+    public const bool IsDistinct = true;
+
+    public Crew() : base(NonEmptyList.Of("a", "b"))
+    {
+    }
+}
+
+/// <summary>Shaped like an unbounded generated class: MaxCount is int.MaxValue.</summary>
+public sealed class Unbounded : NonEmptyList<int>
+{
+    public const int MinCount = 1;
+    public const int MaxCount = int.MaxValue;
+    public const bool IsDistinct = false;
+
+    public Unbounded() : base(NonEmptyList.Of(1))
+    {
+    }
+}
+
+/// <summary>A hand-written collection that declares its bound as a static field instead of a constant.</summary>
+public sealed class Roster : NonEmptyList<int>
+{
+    public static readonly int MinCount = 3;
+
+    public Roster() : base(NonEmptyList.Of(1, 2, 3))
+    {
+    }
+}
+#pragma warning restore CA2260

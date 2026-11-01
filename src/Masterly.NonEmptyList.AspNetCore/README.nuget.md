@@ -10,7 +10,7 @@ dotnet add package Masterly.NonEmptyList.AspNetCore
 
 ## Binding works without this package
 
-`NonEmptyList<T>`, `NonEmptySet<T>` and `NonEmptyString` implement `TryParse` and ship a `TypeConverter`, so minimal APIs and MVC bind them from query strings and route values out of the box. An empty value is a 400 before your handler runs, and an empty JSON array in a request body is a 400 as well.
+`NonEmptyList<T>`, `NonEmptySet<T>` and `NonEmptyString` have a static `TryParse`, and `NonEmptyList<T>` and `NonEmptyString` also ship a `TypeConverter`, so minimal APIs and MVC bind them from query strings and route values out of the box. An empty value is a 400 before your handler runs, and an empty JSON array in a request body is a 400 as well.
 
 ```csharp
 app.MapGet("/products", (NonEmptyList<int> ids) => repo.GetByIds(ids));   // ?ids=1,2,3
@@ -25,10 +25,10 @@ builder.Services.AddOpenApi(options => options.AddNonEmptySchemas());
 
 | Type | Schema |
 |------|--------|
-| `NonEmptyList<T>`, `ImmutableNonEmptyList<T>` | `type: array, minItems: 1, items: T` |
+| `NonEmptyList<T>`, `ImmutableNonEmptyList<T>` | `type: array, minItems: 1`, plus `items: T` on .NET 10 |
 | `NonEmptySet<T>` | `minItems: 1, uniqueItems: true` |
 | `ConstrainedList<T, AtLeast<Two>>` and friends | `minItems` / `maxItems` / `uniqueItems` derived from the constraint |
-| `NonEmptyDictionary<TKey, TValue>` | `type: object, minProperties: 1` |
+| `NonEmptyDictionary<TKey, TValue>` | `type: object, minProperties: 1`, plus `additionalProperties` on .NET 10 |
 | `NonEmptyString` | `type: string, minLength: 1` |
 | `[NonEmptyCollection]` classes | bounds from `MinCount`, `MaxCount`, `IsDistinct` |
 
@@ -55,6 +55,10 @@ app.MapPost("/orders", (CreateOrder request) =>
 Also available: `ToResult(onValid)`, `ToCreatedResult(location)`, `ToResultAsync`, `ToValidationProblem()`, `ToProblemDetails()`, and for MVC `ToActionResult()`, `ModelState.AddErrors(errors)` and `validation.TryGetValue(ModelState, out value)`.
 
 `NonEmptyShape.Of(type)` exposes the cardinality a type guarantees (minimum, maximum, uniqueness) for your own tooling.
+
+## Documentation
+
+Full guide: [ASP.NET Core](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/aspnetcore).
 
 ## License
 
