@@ -31,7 +31,7 @@
     <ProjectReference Include="..\..\src\Masterly.NonEmptyList\Masterly.NonEmptyList.csproj" />
     <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Analyzers\Masterly.NonEmptyList.Analyzers.csproj" />
     <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Analyzers.CodeFixes\Masterly.NonEmptyList.Analyzers.CodeFixes.csproj" />
-    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Analyzers\Masterly.NonEmptyList.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Analyzers\Masterly.NonEmptyList.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

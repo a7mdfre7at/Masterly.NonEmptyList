@@ -41,8 +41,8 @@ v3.0.0:
 
   <!-- The analyzers, code fixes and the [NonEmptyCollection] source generator ship inside this package. -->
   <ItemGroup>
-    <ProjectReference Include="../Masterly.NonEmptyList.Analyzers/Masterly.NonEmptyList.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" SetTargetFramework="TargetFramework=netstandard2.0" />
-    <ProjectReference Include="../Masterly.NonEmptyList.Analyzers.CodeFixes/Masterly.NonEmptyList.Analyzers.CodeFixes.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" SetTargetFramework="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="../Masterly.NonEmptyList.Analyzers/Masterly.NonEmptyList.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
+    <ProjectReference Include="../Masterly.NonEmptyList.Analyzers.CodeFixes/Masterly.NonEmptyList.Analyzers.CodeFixes.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
