@@ -64,4 +64,58 @@ public class AutoFixtureTests
 
         Assert.InRange(bounded.Count, 1, 2);
     }
+
+    [Fact]
+    public void ConstrainedTypes_ShouldShrinkAllTheWayDown_EvenFromALargeCount()
+    {
+        IFixture fixture = new Fixture().Customize(new NonEmptyCustomization { Count = 40 });
+
+        ConstrainedList<int, AtMost<Two>> bounded = fixture.Create<ConstrainedList<int, AtMost<Two>>>();
+        ConstrainedList<int, Exactly<One>> single = fixture.Create<ConstrainedList<int, Exactly<One>>>();
+
+        Assert.Equal(2, bounded.Count);
+        Assert.Single(single);
+    }
+
+    [Fact]
+    public void CountBelowTheConstraintMinimum_ShouldSurfaceTheConstraintError()
+    {
+        NonEmptySpecimenBuilder builder = new(1);
+
+        Assert.ThrowsAny<ArgumentException>(() => builder.Create(typeof(ConstrainedList<int, AtLeast<Two>>), new SpecimenContext(new Fixture())));
+    }
+
+    private sealed class BlankStrings : ISpecimenContext
+    {
+        public object Resolve(object request) => (Type)request == typeof(string) ? " " : 7;
+    }
+
+    [Fact]
+    public void NonEmptyString_ShouldNeverBeBlank_EvenWhenTheFixtureProducesBlankText()
+    {
+        NonEmptyString text = (NonEmptyString)new NonEmptySpecimenBuilder().Create(typeof(NonEmptyString), new BlankStrings());
+
+        Assert.False(string.IsNullOrWhiteSpace(text.Value));
+        Assert.Equal(32, text.Value.Length);
+    }
+
+    [Fact]
+    public void DerivedCollectionWithoutFactory_ShouldExplainWhatIsMissing()
+    {
+        NonEmptySpecimenBuilder builder = new();
+
+        InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => builder.Create(typeof(NoFactoryList), new SpecimenContext(new Fixture())));
+
+        Assert.Contains("does not expose a static From", ex.Message);
+    }
+
+    [Fact]
+    public void Count_ShouldDefaultToTheFixtureRepeatCount()
+    {
+        IFixture fixture = new Fixture { RepeatCount = 5 }.Customize(new NonEmptyCustomization());
+
+        NonEmptyList<int> list = fixture.Create<NonEmptyList<int>>();
+
+        Assert.Equal(5, list.Count);
+    }
 }

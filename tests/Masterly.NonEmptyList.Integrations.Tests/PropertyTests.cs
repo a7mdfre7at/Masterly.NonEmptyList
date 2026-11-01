@@ -96,6 +96,36 @@ public class PropertyTests
     }
 
     [Fact]
+    public void Laws_ShouldFailForAnElementTypeWithBrokenEquality()
+    {
+        NonEmptyList<Shaky> lawful = NonEmptyList.Of(new Shaky(1), new Shaky(2));
+        NonEmptyList<Shaky> broken = NonEmptyList.Of(new Shaky(1), new Shaky(-1));
+
+        Assert.Empty(NonEmptyListLaws.CheckAll(lawful));
+        Assert.True(NonEmptyListLaws.OrderByIsSortedPermutation(lawful));
+
+        Assert.False(NonEmptyListLaws.ConcatPreservesElements(broken, lawful));
+        Assert.False(NonEmptyListLaws.ConcatPreservesElements(lawful, broken));
+        Assert.False(NonEmptyListLaws.ZipUnzipRoundTrip(broken, lawful));
+        Assert.False(NonEmptyListLaws.ZipUnzipRoundTrip(lawful, broken));
+        Assert.False(NonEmptyListLaws.TailsShape(broken));
+        Assert.False(NonEmptyListLaws.InitsShape(broken));
+        Assert.False(NonEmptyListLaws.OrderByIsSortedPermutation(broken));
+        Assert.False(NonEmptyListLaws.OrderByIsSortedPermutation(NonEmptyList.Of(new Contrary(1), new Contrary(2))));
+        Assert.False(NonEmptyListLaws.EqualityIsStructural(broken));
+        Assert.False(NonEmptyListLaws.JsonRoundTrip(broken));
+
+        IReadOnlyList<string> failures = NonEmptyListLaws.CheckAll(broken);
+        Assert.Contains(nameof(NonEmptyListLaws.MapIdentity), failures);
+        Assert.Contains(nameof(NonEmptyListLaws.HeadTailRoundTrip), failures);
+        Assert.Contains(nameof(NonEmptyListLaws.EqualityIsStructural), failures);
+        Assert.Contains(nameof(NonEmptyListLaws.JsonRoundTrip), failures);
+        // The fold laws compare only what the folder produces, which never involves the broken Equals here.
+        Assert.DoesNotContain(nameof(NonEmptyListLaws.FoldMatchesAggregate), failures);
+        Assert.DoesNotContain(nameof(NonEmptyListLaws.ScanLastEqualsFold), failures);
+    }
+
+    [Fact]
     public void SoundnessProperties_ShouldHoldUnderRandomMutations()
     {
         // Any sequence of guarded mutations through the IList<T> interface leaves at least one element.

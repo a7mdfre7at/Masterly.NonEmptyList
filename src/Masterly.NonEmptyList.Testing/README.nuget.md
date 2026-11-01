@@ -43,6 +43,10 @@ NonEmptyGen.List(Gen.Int).Sample(xs => NonEmptyListLaws.CheckAll(xs).Count == 0)
 NonEmptyGen.List(Gen.Int).Sample(xs => NonEmptyListLaws.MapComposition(xs, x => x + 1, x => x * 2));
 ```
 
+## Documentation
+
+Full guide: <https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/testing>.
+
 ## License
 
 MIT

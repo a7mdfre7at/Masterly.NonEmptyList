@@ -18,7 +18,7 @@ public sealed class NonEmptyCustomization : ICustomization
     public void Customize(IFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
-        fixture.Customizations.Insert(0, new NonEmptySpecimenBuilder(Count));
+        fixture.Customizations.Insert(0, new NonEmptySpecimenBuilder(Count ?? fixture.RepeatCount));
     }
 }
 
@@ -27,7 +27,10 @@ public sealed class NonEmptySpecimenBuilder : ISpecimenBuilder
 {
     private readonly int? _count;
 
-    /// <summary>Creates a builder. <paramref name="count"/> overrides the fixture's repeat count.</summary>
+    /// <summary>
+    /// Creates a builder that generates <paramref name="count"/> elements per collection (at least 1), or 3 when it
+    /// is null. <see cref="NonEmptyCustomization"/> passes the fixture's <see cref="IFixture.RepeatCount"/>.
+    /// </summary>
     public NonEmptySpecimenBuilder(int? count = null) => _count = count;
 
     /// <inheritdoc />
@@ -68,20 +71,19 @@ public sealed class NonEmptySpecimenBuilder : ISpecimenBuilder
         for (int i = 0; i < count; i++)
             list.Add(context.Resolve(shape.ElementType));
 
-        for (int attempt = 0; attempt < 16; attempt++)
+        while (true)
         {
             try
             {
                 return InvokeFrom(shape.From, list)!;
             }
-            catch (TargetInvocationException ex) when (ex.InnerException is ArgumentException && list.Count > 1)
+            catch (ArgumentException) when (list.Count > 1)
             {
-                // The constraint rejected the batch (e.g. Distinct, Sorted, MaxCount). Shrink and retry.
+                // The constraint rejected the batch (e.g. Distinct, Sorted, MaxCount). Shrink and retry; a single
+                // element that still fails lets the constraint's own error through.
                 list.RemoveAt(list.Count - 1);
             }
         }
-
-        return new NoSpecimen();
     }
 
     private static Shape? FindShape(Type type)
@@ -128,7 +130,8 @@ public sealed class NonEmptySpecimenBuilder : ISpecimenBuilder
         args[0] = argument;
         for (int i = 1; i < parameters.Length; i++)
             args[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue : null;
-        return from.Invoke(null, args);
+        // Unwrapped, so a factory's own exception surfaces as itself rather than as TargetInvocationException.
+        return from.Invoke(null, BindingFlags.DoNotWrapExceptions, null, args, null);
     }
 
     private sealed record Shape(Type ElementType, Type? KeyType, bool IsDictionary, MethodInfo From);
