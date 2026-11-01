@@ -178,7 +178,7 @@ public sealed class NonEmptyDictionary<TKey, TValue> : IDictionary<TKey, TValue>
         if (_items.Count == 1)
             throw new InvalidOperationException("Cannot remove the last entry of a NonEmptyDictionary");
 
-        return _items.Remove(key);
+        return RemoveChecked(key, out _);
     }
 
     /// <summary>Removes an entry and returns its value.</summary>
@@ -194,7 +194,21 @@ public sealed class NonEmptyDictionary<TKey, TValue> : IDictionary<TKey, TValue>
         if (_items.Count == 1)
             throw new InvalidOperationException("Cannot remove the last entry of a NonEmptyDictionary");
 
-        return _items.Remove(key, out value);
+        return RemoveChecked(key, out value);
+    }
+
+    private bool RemoveChecked(TKey key, [MaybeNullWhen(false)] out TValue value)
+    {
+        bool removed = _items.Remove(key, out value);
+
+        // A comparer that re-enters this dictionary can remove the other entries while this removal is in flight.
+        if (_items.Count == 0)
+        {
+            _items.Add(key, value!);
+            throw new InvalidOperationException("Cannot remove the last entry of a NonEmptyDictionary");
+        }
+
+        return removed;
     }
 
     bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)

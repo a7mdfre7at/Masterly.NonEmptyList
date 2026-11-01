@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -207,7 +208,7 @@ public sealed class ImmutableNonEmptyList<T> : IReadOnlyList<T>, IEquatable<Immu
     /// <param name="enumerable">The enumerable to create the list from.</param>
     /// <param name="result">When successful, contains the list; otherwise, null.</param>
     /// <returns>True if successful; otherwise, false.</returns>
-    public static bool TryFrom(IEnumerable<T>? enumerable, out ImmutableNonEmptyList<T>? result)
+    public static bool TryFrom(IEnumerable<T>? enumerable, [NotNullWhen(true)] out ImmutableNonEmptyList<T>? result)
     {
         result = null;
 

@@ -56,9 +56,12 @@ public static class NonEmptyListBatchingExtensions
 
         async IAsyncEnumerable<NonEmptyList<T>> Iterator([EnumeratorCancellation] CancellationToken ct)
         {
+            // Checked here as well as passed on, so a source that ignores its token still stops between elements.
+            ct.ThrowIfCancellationRequested();
             List<T>? batch = null;
             await foreach (T item in source.WithCancellation(ct).ConfigureAwait(false))
             {
+                ct.ThrowIfCancellationRequested();
                 batch ??= new List<T>(size);
                 batch.Add(item);
                 if (batch.Count == size)
@@ -238,6 +241,7 @@ public static class NonEmptyListBatchingExtensions
 /// <typeparam name="T">The element type.</typeparam>
 public sealed class NonEmptyAsyncEnumerable<T> : IAsyncEnumerable<T>, IAsyncDisposable
 {
+    private IAsyncEnumerable<T>? _restSource;
     private IAsyncEnumerator<T>? _rest;
     private bool _consumed;
 
@@ -247,36 +251,45 @@ public sealed class NonEmptyAsyncEnumerable<T> : IAsyncEnumerable<T>, IAsyncDisp
         _rest = rest;
     }
 
-    /// <summary>Creates a stream from a known head and a lazily produced rest.</summary>
+    /// <summary>
+    /// Creates a stream from a known head and a lazily produced rest. The rest is not started until it is enumerated,
+    /// and the cancellation token used to enumerate it is passed on to <paramref name="rest"/>.
+    /// </summary>
     /// <exception cref="ArgumentNullException">Thrown if the head or the rest is null.</exception>
     public NonEmptyAsyncEnumerable(T head, IAsyncEnumerable<T> rest)
     {
         ArgumentNullException.ThrowIfNull(head);
         ArgumentNullException.ThrowIfNull(rest);
         Head = head;
-        _rest = rest.GetAsyncEnumerator();
+        _restSource = rest;
     }
 
     /// <summary>The first element. Already in memory.</summary>
     public T Head { get; }
 
-    /// <summary>The remaining elements, streamed lazily. Can be enumerated once.</summary>
+    /// <summary>
+    /// The remaining elements, streamed lazily. Can be enumerated once. A token passed with
+    /// <c>WithCancellation</c> is checked before every element.
+    /// </summary>
     /// <exception cref="InvalidOperationException">Thrown if the rest has already been enumerated.</exception>
     public IAsyncEnumerable<T> Rest => RestIterator();
 
     /// <summary>Enumerates the head followed by the rest. Can be enumerated once.</summary>
     public async IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         yield return Head;
-        await foreach (T item in RestIterator().WithCancellation(cancellationToken).ConfigureAwait(false))
+        await foreach (T item in RestIterator(cancellationToken).ConfigureAwait(false))
             yield return item;
     }
 
     /// <summary>Buffers the whole stream. The result is non-empty because the head is known.</summary>
+    /// <exception cref="OperationCanceledException">Thrown if the token is cancelled before the stream ends.</exception>
     public async ValueTask<NonEmptyList<T>> ToNonEmptyListAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         List<T> items = new() { Head };
-        await foreach (T item in RestIterator().WithCancellation(cancellationToken).ConfigureAwait(false))
+        await foreach (T item in RestIterator(cancellationToken).ConfigureAwait(false))
             items.Add(item);
         return NonEmptyList<T>.FromTrustedList(items);
     }
@@ -295,25 +308,36 @@ public sealed class NonEmptyAsyncEnumerable<T> : IAsyncEnumerable<T>, IAsyncDisp
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
+        _restSource = null;
         IAsyncEnumerator<T>? rest = Interlocked.Exchange(ref _rest, null);
         if (rest is not null)
             await rest.DisposeAsync().ConfigureAwait(false);
     }
 
-    private async IAsyncEnumerable<T> RestIterator()
+    // The enumerator that ToNonEmptyAsync created is already bound to its own token, so a later token cannot reach
+    // the source. Checking it before every element is what makes cancellation of the rest work in that case.
+    private async IAsyncEnumerable<T> RestIterator([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (_consumed)
             throw new InvalidOperationException("The rest of a NonEmptyAsyncEnumerable can only be enumerated once");
 
         _consumed = true;
+        IAsyncEnumerable<T>? source = Interlocked.Exchange(ref _restSource, null);
+        if (source is not null)
+            _rest = source.GetAsyncEnumerator(cancellationToken);
+
         IAsyncEnumerator<T>? rest = _rest;
         if (rest is null)
             yield break;
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             while (await rest.MoveNextAsync().ConfigureAwait(false))
+            {
                 yield return rest.Current;
+                cancellationToken.ThrowIfCancellationRequested();
+            }
         }
         finally
         {
@@ -321,9 +345,9 @@ public sealed class NonEmptyAsyncEnumerable<T> : IAsyncEnumerable<T>, IAsyncDisp
         }
     }
 
-    private async IAsyncEnumerable<TResult> SelectRest<TResult>(Func<T, TResult> selector)
+    private async IAsyncEnumerable<TResult> SelectRest<TResult>(Func<T, TResult> selector, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        await foreach (T item in RestIterator().ConfigureAwait(false))
+        await foreach (T item in RestIterator(cancellationToken).ConfigureAwait(false))
             yield return selector(item);
     }
 }

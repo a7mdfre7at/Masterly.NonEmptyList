@@ -1,8 +1,8 @@
 namespace Masterly.NonEmptyList;
 
 /// <summary>
-/// Marks a partial class as a domain-specific non-empty collection. The <c>Masterly.NonEmptyList.Analyzers</c>
-/// package's source generator completes the class: it derives from <see cref="NonEmptyList{T}"/>, adds constructors,
+/// Marks a partial class as a domain-specific non-empty collection. The source generator bundled in the
+/// <c>Masterly.NonEmptyList</c> package completes the class: it derives from <see cref="NonEmptyList{T}"/>, adds constructors,
 /// <c>From</c>, <c>TryFrom</c>, <c>Of</c> and <c>Validate</c> factories, collection-expression support, a
 /// System.Text.Json converter, a <c>DebuggerDisplay</c>, and enforces <see cref="Distinct"/>, <see cref="MinCount"/>
 /// and <see cref="MaxCount"/> on construction and on every mutation.

@@ -143,15 +143,20 @@ public sealed class NonEmptyListTypeConverter : TypeConverter
     public NonEmptyListTypeConverter() { }
 
     /// <summary>
-    /// Creates a converter for the specified closed <see cref="NonEmptyList{T}"/> type.
+    /// Creates a converter for the specified closed <see cref="NonEmptyList{T}"/> type, or a type derived from it.
+    /// A derived type such as <c>ConstrainedList&lt;T, TConstraint&gt;</c> inherits the <see cref="TypeConverterAttribute"/>,
+    /// so <see cref="TypeDescriptor.GetConverter(Type)"/> must not throw for it. It converts from a string only if it
+    /// declares its own <c>TryParse(string, IFormatProvider, out TSelf)</c>; otherwise <see cref="CanConvertFrom(ITypeDescriptorContext?, Type)"/>
+    /// returns <see langword="false"/> for strings.
     /// </summary>
-    /// <param name="type">The closed generic list type, for example <c>typeof(NonEmptyList&lt;int&gt;)</c>.</param>
+    /// <param name="type">The closed list type, for example <c>typeof(NonEmptyList&lt;int&gt;)</c>.</param>
+    /// <exception cref="ArgumentException">Thrown if the type is not a <see cref="NonEmptyList{T}"/> or derived from one.</exception>
     public NonEmptyListTypeConverter(Type type)
     {
         ArgumentNullException.ThrowIfNull(type);
 
-        if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(NonEmptyList<>))
-            throw new ArgumentException($"{nameof(NonEmptyListTypeConverter)} only supports NonEmptyList<T>, not {type.Name}.", nameof(type));
+        if (!DerivesFromNonEmptyList(type))
+            throw new ArgumentException($"{nameof(NonEmptyListTypeConverter)} only supports NonEmptyList<T> and types derived from it, not {type.Name}.", nameof(type));
 
         _listType = type;
         _tryParse = type.GetMethod(
@@ -160,6 +165,17 @@ public sealed class NonEmptyListTypeConverter : TypeConverter
             binder: null,
             new[] { typeof(string), typeof(IFormatProvider), type.MakeByRefType() },
             modifiers: null);
+    }
+
+    private static bool DerivesFromNonEmptyList(Type type)
+    {
+        for (Type? current = type; current is not null && current != typeof(object); current = current.BaseType)
+        {
+            if (current.IsGenericType && current.GetGenericTypeDefinition() == typeof(NonEmptyList<>))
+                return true;
+        }
+
+        return false;
     }
 
     /// <inheritdoc />

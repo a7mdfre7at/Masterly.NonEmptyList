@@ -220,6 +220,22 @@ public static class NonEmptyListLinqExtensions
         return NonEmptyList<T>.FromTrustedList(Enumerable.Union(first, second.Items, comparer).ToList());
     }
 
+    /// <summary>
+    /// Returns the set union of two non-empty lists. The result is non-empty. This overload exists so that
+    /// <c>a.Union(b)</c> is not ambiguous when both operands are non-empty lists.
+    /// </summary>
+    public static NonEmptyList<T> Union<T>(this NonEmptyList<T> first, NonEmptyList<T> second)
+        => Union(first, second, null);
+
+    /// <summary>Returns the set union of two non-empty lists using a comparer. The result is non-empty.</summary>
+    public static NonEmptyList<T> Union<T>(this NonEmptyList<T> first, NonEmptyList<T> second, IEqualityComparer<T>? comparer)
+    {
+        ArgumentNullException.ThrowIfNull(first);
+        ArgumentNullException.ThrowIfNull(second);
+
+        return NonEmptyList<T>.FromTrustedList(Enumerable.Union(first.Items, second.Items, comparer).ToList());
+    }
+
     #endregion
 
     #region Grouping and partitioning

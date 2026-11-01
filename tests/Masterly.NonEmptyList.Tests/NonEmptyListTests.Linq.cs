@@ -206,4 +206,17 @@ public partial class NonEmptyListTests
         Assert.Equal(3, list.Count());
         Assert.Equal(15, list.Aggregate((a, b) => a + b));
     }
+
+    [Fact]
+    public void Union_OfTwoNonEmptyLists_ShouldCompileAndStayNonEmpty()
+    {
+        NonEmptyList<int> first = [1, 2, 2];
+        NonEmptyList<int> second = [2, 3];
+
+        NonEmptyList<int> union = first.Union(second);
+        NonEmptyList<string> caseInsensitive = NonEmptyList.Of("a", "B").Union(NonEmptyList.Of("A", "c"), StringComparer.OrdinalIgnoreCase);
+
+        Assert.Equal([1, 2, 3], union);
+        Assert.Equal(["a", "B", "c"], caseInsensitive);
+    }
 }

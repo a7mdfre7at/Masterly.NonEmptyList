@@ -7,13 +7,14 @@ namespace Masterly.NonEmptyList;
 /// <summary>
 /// An immutable list with a cursor that always points at an element. Moving the cursor past either end
 /// returns <see langword="null"/> instead of throwing, so wizard steps, carousels, tab strips and playlists
-/// never dereference a missing "current" item. Every move is O(1).
+/// never dereference a missing "current" item. Every move returns a new zipper and copies the elements on either
+/// side of the focus, so a move costs O(n); this suits UI-sized lists such as wizard steps rather than large data.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
 [DebuggerDisplay("Focus = {Focus}, Index = {Index}, Count = {Count}")]
 public sealed class NonEmptyZipper<T> : IEquatable<NonEmptyZipper<T>>
 {
-    // _left is stored in reverse order so that moving left is O(1).
+    // _left is stored in reverse order, so the element nearest the focus is always its head.
     private readonly ImmutableNonEmptyList<T>? _left;
     private readonly ImmutableNonEmptyList<T>? _right;
 

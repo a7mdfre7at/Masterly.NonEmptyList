@@ -175,8 +175,10 @@ public sealed class Validation<T, TError> : IEquatable<Validation<T, TError>>, I
     }
 
     /// <summary>
-    /// Adds an error when the predicate fails. Existing errors are kept, so several <c>Ensure</c> calls accumulate.
-    /// The predicate is only evaluated when the result is currently valid.
+    /// Turns a valid result into an invalid one with <paramref name="error"/> when the predicate fails. An invalid
+    /// result is returned unchanged without evaluating the predicate, because there is no value to test, so a chain
+    /// of <c>Ensure</c> calls stops at the first failure. To report several independent failures at once, validate
+    /// each one separately and combine them with <see cref="Validation.Combine{T1,T2,TResult,TError}"/>.
     /// </summary>
     public Validation<T, TError> Ensure(Func<T, bool> predicate, TError error)
     {

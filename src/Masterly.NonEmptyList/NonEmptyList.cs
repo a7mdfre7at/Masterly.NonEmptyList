@@ -41,8 +41,6 @@ public class NonEmptyList<T> :
     ISpanParsable<NonEmptyList<T>>
 {
     private readonly List<T> _items;
-    private NonEmptyList<T>? _cachedTail;
-    private NonEmptyList<T>? _cachedInit;
 
     #region Properties
 
@@ -52,36 +50,16 @@ public class NonEmptyList<T> :
     public T Head => _items[0];
 
     /// <summary>
-    /// Gets the list of elements excluding the first (tail of the list).
-    /// Returns null if there is only one element.
+    /// Gets a new list of the elements excluding the first (tail of the list), or null if there is only one element.
+    /// Each read returns a fresh copy, so changing it never affects this list or a later read.
     /// </summary>
-    public NonEmptyList<T>? Tail
-    {
-        get
-        {
-            if (_cachedTail is not null) return _cachedTail;
-            if (Count == 1) return null;
-
-            _cachedTail = new NonEmptyList<T>(_items.GetRange(1, Count - 1));
-            return _cachedTail;
-        }
-    }
+    public NonEmptyList<T>? Tail => Count == 1 ? null : new NonEmptyList<T>(_items.GetRange(1, Count - 1));
 
     /// <summary>
-    /// Gets the list of elements excluding the last (init of the list).
-    /// Returns null if there is only one element.
+    /// Gets a new list of the elements excluding the last (init of the list), or null if there is only one element.
+    /// Each read returns a fresh copy, so changing it never affects this list or a later read.
     /// </summary>
-    public NonEmptyList<T>? Init
-    {
-        get
-        {
-            if (_cachedInit is not null) return _cachedInit;
-            if (Count == 1) return null;
-
-            _cachedInit = new NonEmptyList<T>(_items.GetRange(0, Count - 1));
-            return _cachedInit;
-        }
-    }
+    public NonEmptyList<T>? Init => Count == 1 ? null : new NonEmptyList<T>(_items.GetRange(0, Count - 1));
 
     /// <summary>
     /// Gets the first element of the list.
@@ -121,7 +99,6 @@ public class NonEmptyList<T> :
             ArgumentNullException.ThrowIfNull(value);
             EnsureMutable();
             ValidateReplacement(index, value);
-            InvalidateCaches();
             _items[index] = value;
         }
     }
@@ -482,7 +459,6 @@ public class NonEmptyList<T> :
         EnsureMutable();
         ValidateItem(item);
         ValidateCount(Count + 1);
-        InvalidateCaches();
         _items.Add(item);
     }
 
@@ -506,7 +482,6 @@ public class NonEmptyList<T> :
         EnsureMutable();
         ValidateRange(items);
         ValidateCount(Count + items.Count);
-        InvalidateCaches();
         _items.AddRange(items);
     }
 
@@ -530,7 +505,6 @@ public class NonEmptyList<T> :
         EnsureMutable();
         ValidateItem(item);
         ValidateCount(Count + 1);
-        InvalidateCaches();
         _items.Insert(index, item);
     }
 
@@ -556,7 +530,6 @@ public class NonEmptyList<T> :
         EnsureMutable();
         ValidateRange(items);
         ValidateCount(Count + items.Count);
-        InvalidateCaches();
         _items.InsertRange(index, items);
     }
 
@@ -594,7 +567,6 @@ public class NonEmptyList<T> :
             throw new InvalidOperationException("Cannot use Remove method while the NonEmptyList contains only one item.");
 
         ValidateCount(Count - 1);
-        InvalidateCaches();
         _items.RemoveAt(index);
         return true;
     }
@@ -611,7 +583,6 @@ public class NonEmptyList<T> :
             throw new InvalidOperationException("Cannot use RemoveAt method while the NonEmptyList contains only one item.");
 
         ValidateCount(Count - 1);
-        InvalidateCaches();
         _items.RemoveAt(index);
     }
 
@@ -628,7 +599,6 @@ public class NonEmptyList<T> :
             throw new InvalidOperationException("Cannot remove all items from a NonEmptyList");
 
         ValidateCount(Count - count);
-        InvalidateCaches();
         _items.RemoveRange(index, count);
     }
 
@@ -657,7 +627,6 @@ public class NonEmptyList<T> :
             return 0;
 
         ValidateCount(Count - matchCount);
-        InvalidateCaches();
         return _items.RemoveAll(match);
     }
 
@@ -765,7 +734,6 @@ public class NonEmptyList<T> :
     public void Reverse()
     {
         EnsureMutable();
-        InvalidateCaches();
         _items.Reverse();
     }
 
@@ -773,7 +741,6 @@ public class NonEmptyList<T> :
     public void Reverse(int index, int count)
     {
         EnsureMutable();
-        InvalidateCaches();
         _items.Reverse(index, count);
     }
 
@@ -781,7 +748,6 @@ public class NonEmptyList<T> :
     public void Sort()
     {
         EnsureMutable();
-        InvalidateCaches();
         _items.Sort();
     }
 
@@ -789,7 +755,6 @@ public class NonEmptyList<T> :
     public void Sort(Comparison<T> comparison)
     {
         EnsureMutable();
-        InvalidateCaches();
         _items.Sort(comparison);
     }
 
@@ -797,7 +762,6 @@ public class NonEmptyList<T> :
     public void Sort(IComparer<T>? comparer)
     {
         EnsureMutable();
-        InvalidateCaches();
         _items.Sort(comparer);
     }
 
@@ -805,7 +769,6 @@ public class NonEmptyList<T> :
     public void Sort(int index, int count, IComparer<T>? comparer)
     {
         EnsureMutable();
-        InvalidateCaches();
         _items.Sort(index, count, comparer);
     }
 
@@ -1454,8 +1417,6 @@ public class NonEmptyList<T> :
         for (int i = 0; i < itemList.Count; i++)
             ValidateReplacement(startIndex + i, itemList[i]);
 
-        InvalidateCaches();
-
         for (int i = 0; i < itemList.Count; i++)
             _items[startIndex + i] = itemList[i];
     }
@@ -1761,16 +1722,6 @@ public class NonEmptyList<T> :
     /// Inequality operator.
     /// </summary>
     public static bool operator !=(NonEmptyList<T>? left, NonEmptyList<T>? right) => !(left == right);
-
-    #endregion
-
-    #region Private Helpers
-
-    private void InvalidateCaches()
-    {
-        _cachedTail = null;
-        _cachedInit = null;
-    }
 
     #endregion
 

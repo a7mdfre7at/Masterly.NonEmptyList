@@ -172,11 +172,16 @@ public sealed class NonEmptySet<T> : ISet<T>, IReadOnlySet<T>, IReadOnlyCollecti
     public int RemoveWhere(Predicate<T> match)
     {
         ArgumentNullException.ThrowIfNull(match);
-        int matching = _items.Count(x => match(x));
-        if (matching >= _items.Count)
+
+        // One predicate call per element: a predicate that changes its answer between a counting pass and a
+        // removing pass could otherwise empty the set.
+        List<T> matching = _items.Where(x => match(x)).ToList();
+        if (matching.Count >= _items.Count)
             throw new InvalidOperationException("Cannot remove every element of a NonEmptySet");
 
-        return _items.RemoveWhere(match);
+        foreach (T item in matching)
+            _items.Remove(item);
+        return matching.Count;
     }
 
     /// <summary>Clearing is not supported because a NonEmptySet cannot be empty.</summary>

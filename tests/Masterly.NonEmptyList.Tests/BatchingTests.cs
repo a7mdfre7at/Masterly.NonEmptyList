@@ -223,6 +223,122 @@ public class BatchingTests
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await NullFirst().ToNonEmptyAsync());
         await Assert.ThrowsAsync<InvalidDataException>(async () => await Failing().ToNonEmptyAsync());
     }
+
+    // A source that never looks at its cancellation token, so only the operator's own checks can stop it.
+    private static async IAsyncEnumerable<int> IgnoresToken(int count)
+    {
+        for (int i = 1; i <= count; i++)
+        {
+            await Task.Yield();
+            yield return i;
+        }
+    }
+
+    [Fact]
+    public async Task BatchNonEmpty_SizeOnly_ShouldStop_WhenTheSourceIgnoresTheToken()
+    {
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (NonEmptyList<int> _ in IgnoresToken(10).BatchNonEmpty(2, cts.Token))
+            {
+            }
+        });
+    }
+
+    [Fact]
+    public async Task BatchNonEmpty_SizeOnly_ShouldStopBetweenElements_WhenCancelledMidStream()
+    {
+        using CancellationTokenSource cts = new();
+        List<NonEmptyList<int>> batches = [];
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (NonEmptyList<int> batch in IgnoresToken(10).BatchNonEmpty(2, cts.Token))
+            {
+                batches.Add(batch);
+                cts.Cancel();
+            }
+        });
+
+        Assert.Single(batches);
+    }
+
+    [Fact]
+    public async Task NonEmptyAsyncEnumerable_ToNonEmptyListAsync_ShouldHonourItsToken()
+    {
+        NonEmptyAsyncEnumerable<int> stream = (await IgnoresToken(5).ToNonEmptyAsync())!;
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await stream.ToNonEmptyListAsync(cts.Token));
+    }
+
+    [Fact]
+    public async Task NonEmptyAsyncEnumerable_BatchRest_ShouldHonourItsToken()
+    {
+        NonEmptyAsyncEnumerable<int> stream = (await IgnoresToken(5).ToNonEmptyAsync())!;
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (NonEmptyList<int> _ in stream.BatchRest(2, cts.Token))
+            {
+            }
+        });
+    }
+
+    [Fact]
+    public async Task NonEmptyAsyncEnumerable_RestWithCancellation_ShouldStopBetweenElements()
+    {
+        NonEmptyAsyncEnumerable<int> stream = (await IgnoresToken(5).ToNonEmptyAsync())!;
+        using CancellationTokenSource cts = new();
+        List<int> seen = [];
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (int item in stream.Rest.WithCancellation(cts.Token))
+            {
+                seen.Add(item);
+                cts.Cancel();
+            }
+        });
+
+        Assert.Equal([2], seen);
+    }
+
+    [Fact]
+    public async Task NonEmptyAsyncEnumerable_PublicConstructor_ShouldPassTheTokenToTheRest()
+    {
+        CancellationToken received = default;
+        async IAsyncEnumerable<int> Rest([EnumeratorCancellation] CancellationToken ct = default)
+        {
+            received = ct;
+            await Task.Yield();
+            yield return 2;
+        }
+
+        using CancellationTokenSource cts = new();
+        NonEmptyAsyncEnumerable<int> stream = new(1, Rest());
+
+        NonEmptyList<int> all = await stream.ToNonEmptyListAsync(cts.Token);
+
+        Assert.Equal([1, 2], all);
+        Assert.Equal(cts.Token, received);
+    }
+
+    [Fact]
+    public async Task NonEmptyAsyncEnumerable_Select_ShouldPassTheTokenThrough()
+    {
+        NonEmptyAsyncEnumerable<int> stream = (await IgnoresToken(5).ToNonEmptyAsync())!;
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await stream.Select(x => x * 10).ToNonEmptyListAsync(cts.Token));
+    }
 }
 
 file static class EmptyAsync
