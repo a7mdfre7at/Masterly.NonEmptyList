@@ -6,7 +6,7 @@ Namespace for everything in the core package: `Masterly.NonEmptyList`. Install: 
 
 ## Core types and the members to reach for
 
-- `NonEmptyList<T>`: `Head`, `Last`, `Tail` (nullable), `Init` (nullable), `Count`, indexer, `Slice`, ranges. Mutable, but `Clear`/`Remove`/`RemoveAt` can never empty it (they throw). Create with `[1, 2, 3]`, `NonEmptyList.Of(a, b)`, `NonEmptyList<T>.From(seq)`, `TryFrom`, `new NonEmptyList<T>(seq)`, `seq.ToNonEmptyList()`.
+- `NonEmptyList<T>`: `Head`, `Last`, `Tail` (nullable), `Init` (nullable), `Count`, indexer, `Slice`, ranges. Mutable, but nothing can empty it: `Clear` always throws `NotSupportedException`, and `Remove`/`RemoveAt` throw only when they would remove the last element (`Remove` of an absent item returns `false`). `Tail`/`Init` return a fresh copy on every read. Create with `[1, 2, 3]`, `NonEmptyList.Of(a, b)`, `NonEmptyList<T>.From(seq)`, `TryFrom`, `new NonEmptyList<T>(seq)`, `seq.ToNonEmptyList()`.
 - LINQ on a `NonEmptyList<T>` stays a `NonEmptyList<T>`: `Select`, `SelectMany`, `OrderBy`, `ThenBy`, `GroupBy`, `Distinct`, `Union`, `Concat`, `Chunk`, `Max`, `Min` (non-nullable). `Where`, `Skip`, `Take` return `IEnumerable<T>` because they may be empty.
 - Prefer `Head` over `First()`, `Last` over `Last()`, `Reduce(f)` over `Aggregate(f)`, `Count` over `Count()`. Never write `xs.Any()` or `xs.Count == 0` on a non-empty list; the analyzer flags both.
 - Math without an empty path: `Sum`, `Product`, `Average`, `Median`, `Mode`, `MinMax`. Works for any `System.Numerics` type.
@@ -36,10 +36,11 @@ Namespace for everything in the core package: `Masterly.NonEmptyList`. Install: 
 
 ## Migration from 2.x
 
-`NonEmptyList<T>` no longer derives from `List<T>` (accept `IList<T>`/`IReadOnlyList<T>` or call `.ToList()`; the bundled code fix does this). `Prepend` returns a new list, `AddFirst` mutates. `Remove` returns `bool`. .NET 6 is no longer targeted.
+`NonEmptyList<T>` no longer derives from `List<T>` (accept `IList<T>`/`IReadOnlyList<T>` or call `.ToList()`; the bundled code fix does this for CS1503, CS0029, CS0266 and CS1662, not for explicit casts). `Prepend` returns a new list, `AddFirst` mutates. `Remove` returns `bool`. .NET 6 is no longer targeted.
 
 ## Links
 
 - Repository: https://github.com/a7mdfre7at/Masterly.NonEmptyList
-- Analyzer rules: https://github.com/a7mdfre7at/Masterly.NonEmptyList/blob/master/docs/analyzers.md
+- Documentation site: https://a7mdfre7at.github.io/Masterly.NonEmptyList/
+- Analyzer rules: https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/analyzers
 - Changelog: https://github.com/a7mdfre7at/Masterly.NonEmptyList/blob/master/CHANGELOG.md

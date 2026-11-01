@@ -4,7 +4,7 @@ Proof-carrying collections for .NET. `NonEmptyList<T>` is a list that the type s
 
 <img src="https://raw.githubusercontent.com/a7mdfre7at/Masterly.NonEmptyList/master/repo_image.png" width="200" height="180">
 
-[![Nuget](https://img.shields.io/nuget/v/Masterly.NonEmptyList?style=flat-square)](https://www.nuget.org/packages/Masterly.NonEmptyList) ![Nuget](https://img.shields.io/nuget/dt/Masterly.NonEmptyList?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/a7mdfre7at/Masterly.NonEmptyList?style=flat-square) ![GitHub](https://img.shields.io/github/license/a7mdfre7at/Masterly.NonEmptyList) [![Build](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml) [![CodeQL Analysis](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql.yml) [![Publish to NuGet](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml)
+[![Nuget](https://img.shields.io/nuget/v/Masterly.NonEmptyList?style=flat-square)](https://www.nuget.org/packages/Masterly.NonEmptyList) ![Nuget](https://img.shields.io/nuget/dt/Masterly.NonEmptyList?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/a7mdfre7at/Masterly.NonEmptyList?style=flat-square) ![GitHub](https://img.shields.io/github/license/a7mdfre7at/Masterly.NonEmptyList) [![Build](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml) [![CodeQL Analysis](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql.yml) [![Publish to NuGet](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml) [![Docs](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/docs.yml/badge.svg?branch=master)](https://a7mdfre7at.github.io/Masterly.NonEmptyList/)
 
 ## Give a Star! :star:
 
@@ -42,11 +42,8 @@ int first = numbers.Head;
 int last  = numbers.Last;
 
 // List patterns and slicing
-string shape = numbers switch
-{
-    [var only]              => $"just {only}",
-    [var head, .. var rest] => $"{head} then {rest.Count} more",
-};
+if (numbers is [var head, .. var rest])
+    Console.WriteLine($"{head} then {rest.Count} more");
 List<int> tail = numbers[1..];
 
 // LINQ stays inside the type when the result is provably non-empty
@@ -114,7 +111,7 @@ Works for any type implementing the `System.Numerics` interfaces, including your
 
 ```csharp
 Money total   = invoice.Lines.Select(l => l.Amount).Sum();   // Money has +, no Money.Zero needed
-Vector3 mean  = points.Average();
+double mean  = readings.Average();                         // readings is a NonEmptyList<double>
 decimal med   = prices.Median();
 string common = tags.Mode();
 (int lo, int hi) = numbers.MinMax();
@@ -159,7 +156,7 @@ return user.ToResult();   // Masterly.NonEmptyList.AspNetCore: 200 with the user
 
 | Type | Guarantee |
 |------|-----------|
-| `ImmutableNonEmptyList<T>` | same API, returns new instances |
+| `ImmutableNonEmptyList<T>` | never changes: every change returns a new list, and a removal that would empty it returns `null`; a smaller API than `NonEmptyList<T>` (no type-preserving LINQ or generic math) |
 | `NonEmptySet<T>` | a `HashSet<T>` that cannot become empty; `IntersectWith` a disjoint set throws |
 | `NonEmptyDictionary<TKey, TValue>` | a `Dictionary` with at least one entry |
 | `NonEmptyString` | never null, empty or whitespace; implicit to `string`; binds from query strings, config and JSON |
@@ -216,7 +213,7 @@ Bundled in the main package. Full reference in [docs/analyzers.md](docs/analyzer
 | NEL003 (info) | `xs.First()`, `xs.Last()`, `xs.Aggregate(f)`, `xs.Count()` on a non-empty list | `Head`, `Last`, `Reduce(f)`, `Count` |
 | NEL004 (info) | `xs.Any()`, `xs.Count == 0`, `xs.Count > 0` on a non-empty list | `true` / `false` |
 | NEL005 (opt in) | `First()`, `Max()`, `Single()`, `Average()`, ... on an `IEnumerable<T>` not proven non-empty | `xs.ToNonEmptyList().Max()` |
-| CS1503 / CS0029 | v3 migration: non-empty list passed where `List<T>` is required | `.ToList()` |
+| CS1503 / CS0029 / CS0266 / CS1662 | v3 migration: non-empty list passed, assigned or returned where `List<T>` is required | `.ToList()` |
 
 One attribute on a partial class generates a domain collection with constructors, factories, `Validate`, collection expressions, a JSON converter and invariants enforced on every mutation:
 
@@ -231,7 +228,7 @@ Validation<OrderLines, ValidationError> checked = OrderLines.Validate(input, "li
 
 ### Framework integration
 
-- **ASP.NET Core**: `NonEmptyList<T>`, `NonEmptySet<T>` and `NonEmptyString` bind from query strings and route values with no extra package; an empty value is a 400. `Masterly.NonEmptyList.AspNetCore` adds `AddOpenApi(o => o.AddNonEmptySchemas())` and `validation.ToResult()`.
+- **ASP.NET Core**: `NonEmptyList<T>`, `NonEmptySet<T>` and `NonEmptyString` bind from query strings and route values with no extra package; an empty value is a 400. `Masterly.NonEmptyList.AspNetCore` adds `AddOpenApi(o => o.AddNonEmptySchemas())` (.NET 9 and later) and `validation.ToResult()`.
 - **Configuration**: `services.AddNonEmptyOptions<SmtpOptions>("Smtp")` binds array or comma-separated values and refuses to start the host when a required collection is empty, naming the key.
 - **EF Core**: store lists as JSON columns, configure non-empty relationships, validate on `SaveChanges`, and use NonEmptyList LINQ inside projections. See below.
 - **Serialization**: System.Text.Json is built in; Newtonsoft.Json and MessagePack are separate packages; Dapper type handlers store collections as JSON text.
@@ -268,16 +265,20 @@ dotnet run -c Release --project benchmarks/Masterly.NonEmptyList.Benchmarks -- -
 
 ## Migrating from 2.x
 
-- `NonEmptyList<T>` no longer derives from `List<T>`. Code that passed it where a `List<T>` was required should accept `IList<T>` or `IReadOnlyList<T>` instead, or call `.ToList()`. The bundled code fix offers this at every affected site.
-- `Prepend(item)` now returns a new list, matching LINQ. Use `AddFirst(item)` to insert in place.
+- `NonEmptyList<T>` no longer derives from `List<T>`. Code that passed it where a `List<T>` was required should accept `IList<T>` or `IReadOnlyList<T>` instead, or call `.ToList()`. The bundled code fix offers `.ToList()` for CS1503, CS0029, CS0266 and CS1662; an explicit cast `(List<T>)xs` (CS0030) must be changed by hand. `.ToList()` is a copy, so a method that mutated the list it received no longer changes the caller's list.
+- `Prepend(item)` now returns a new list, matching LINQ. Use `AddFirst(item)` to insert in place. A bare `list.Prepend(x);` statement still compiles but no longer changes `list`.
+- LINQ operators that cannot produce an empty result (`Select`, `OrderBy`, `GroupBy`, `Distinct`, `Chunk`, ...) now return `NonEmptyList<T>` and run immediately instead of deferring. `Chunk` yields `NonEmptyList<T>` chunks instead of arrays.
 - `Remove(item)` returns `bool`; `AsReadOnly()` returns `ReadOnlyCollection<T>`.
 - `new NonEmptyList<string>(null)` is ambiguous now that an `IEnumerable<T>` constructor exists; cast the argument.
 - .NET 6 is no longer targeted.
 - If you use the EF Core package, add `.UseNonEmptyList()` to your options.
+- The full list, with before-and-after code, is in [Upgrading from 2.x](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/upgrading-from-2x).
 
 ## Documentation
 
-- [Analyzer rules and the source generator](docs/analyzers.md)
+Full guides, examples and the API reference: **[a7mdfre7at.github.io/Masterly.NonEmptyList](https://a7mdfre7at.github.io/Masterly.NonEmptyList/)**
+
+- [Analyzer rules and the source generator](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/analyzers) (also in [docs/analyzers.md](docs/analyzers.md))
 - [Changelog](CHANGELOG.md)
 - [llms.txt](llms.txt) for AI assistants
 - The **[Wiki](../../wiki)**

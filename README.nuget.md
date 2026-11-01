@@ -59,7 +59,7 @@ public sealed partial class OrderLines;                                      // 
 
 ## Migrating from 2.x
 
-`NonEmptyList<T>` no longer derives from `List<T>` (a bundled code fix offers `.ToList()` at every affected site); `Prepend` returns a new list (use `AddFirst` to mutate); `Remove` returns `bool`; .NET 6 is no longer targeted. EF Core users should call `.UseNonEmptyList()` on their options.
+`NonEmptyList<T>` no longer derives from `List<T>` (a bundled code fix offers `.ToList()` for CS1503, CS0029, CS0266 and CS1662; explicit casts need a manual change); `Prepend` returns a new list (use `AddFirst` to mutate); `Remove` returns `bool`; .NET 6 is no longer targeted. EF Core users should call `.UseNonEmptyList()` on their options.
 
 ## License
 
