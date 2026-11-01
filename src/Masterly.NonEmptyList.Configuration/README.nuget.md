@@ -37,7 +37,11 @@ An empty `Hosts` array stops the host with:
 Configuration key 'Smtp:Hosts' must contain at least one element.
 ```
 
+On .NET 8 the JSON provider drops an empty array altogether, so the key reads as missing and the message is `Configuration key 'Smtp:Hosts' is required and must contain at least one element.`
+
 Both the array form (`Hosts:0`, `Hosts:1`) and a comma-separated scalar (`Hosts=smtp1,smtp2`, handy for environment variables) are accepted.
+
+Every element and dictionary entry is read by this package, never skipped: Microsoft's binder would silently turn `["80", "eighty"]` into `[80]`. A value that cannot be converted, a value that converts to `null`, a section where a single value is expected, and two dictionary keys that convert to the same key all throw `InvalidOperationException` naming the full key, for example `Configuration key 'Smtp:Ports:1' contains 'eighty', which is not a valid Int32.` Nested collections inside a non-empty collection are read with the same rules, and an object's own required non-empty members are checked. A JSON `null` element reads as an empty string on every target framework. Everything Microsoft's binder can create on its own (plain properties, plain collections, objects without non-empty members) is still bound by it, with its usual behaviour: constructor binding, `[ConfigurationKeyName]`, get-only collections.
 
 ### Direct reads
 
@@ -52,6 +56,10 @@ SmtpOptions options = configuration.GetSection("Smtp").GetNonEmpty<SmtpOptions>(
 ```
 
 Supported property types: `NonEmptyList<T>`, `ImmutableNonEmptyList<T>`, `NonEmptySet<T>`, `NonEmptyDictionary<TKey, TValue>`, `ConstrainedList<T, TConstraint>`, `NonEmptyString`, `[NonEmptyCollection]`-generated classes, and nested classes containing any of them. A property is treated as optional when its type is nullable (`NonEmptyList<string>?`) or it already has a value.
+
+## Documentation
+
+Full guide: <https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/configuration>.
 
 ## License
 
