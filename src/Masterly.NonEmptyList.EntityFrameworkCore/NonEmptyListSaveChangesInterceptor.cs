@@ -5,11 +5,22 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace Masterly.NonEmptyList.EntityFrameworkCore;
 
 /// <summary>
-/// A SaveChanges interceptor that validates NonEmptyList navigation properties
-/// to ensure they always contain at least one element before saving changes.
+/// A SaveChanges interceptor that validates the non-empty collection properties of every added or modified entity
+/// before saving. It checks <see cref="NonEmptyList{T}"/> and every type derived from it (such as
+/// <c>ConstrainedList</c>, <c>OrderedNonEmptyList</c> and <c>[NonEmptyCollection]</c> classes),
+/// <see cref="ImmutableNonEmptyList{T}"/>, <see cref="NonEmptySet{T}"/> and <see cref="NonEmptyDictionary{TKey, TValue}"/>.
+/// A null value is rejected unless the property is declared nullable, for example <c>NonEmptyList&lt;T&gt;?</c>.
 /// </summary>
 public class NonEmptyListSaveChangesInterceptor : SaveChangesInterceptor
 {
+    private static readonly Type[] NonEmptyGenericTypes =
+    [
+        typeof(NonEmptyList<>),
+        typeof(ImmutableNonEmptyList<>),
+        typeof(NonEmptySet<>),
+        typeof(NonEmptyDictionary<,>),
+    ];
+
     /// <inheritdoc />
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
@@ -37,6 +48,8 @@ public class NonEmptyListSaveChangesInterceptor : SaveChangesInterceptor
         var entries = context.ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
+        NullabilityInfoContext nullability = new();
+
         foreach (var entry in entries)
         {
             Type entityType = entry.Entity.GetType();
@@ -44,41 +57,40 @@ public class NonEmptyListSaveChangesInterceptor : SaveChangesInterceptor
 
             foreach (PropertyInfo property in properties)
             {
-                if (!IsNonEmptyListType(property.PropertyType))
+                if (property.GetIndexParameters().Length != 0 || !IsNonEmptyType(property.PropertyType))
                     continue;
 
                 object? value = property.GetValue(entry.Entity);
 
                 if (value is null)
                 {
+                    if (nullability.Create(property).ReadState == NullabilityState.Nullable)
+                        continue;
+
                     throw new InvalidOperationException(
-                        $"NonEmptyList property '{property.Name}' on entity '{entityType.Name}' cannot be null. " +
-                        "A NonEmptyList must always contain at least one element.");
+                        $"Non-empty property '{property.Name}' on entity '{entityType.Name}' cannot be null. " +
+                        "Declare the property nullable if null is allowed; otherwise it must contain at least one element.");
                 }
 
-                // Use reflection to check Count property
-                PropertyInfo? countProperty = property.PropertyType.GetProperty("Count");
-                if (countProperty is not null)
+                PropertyInfo? countProperty = property.PropertyType.GetProperty("Count", typeof(int));
+                if (countProperty is not null && (int)countProperty.GetValue(value)! == 0)
                 {
-                    int count = (int)countProperty.GetValue(value)!;
-                    if (count == 0)
-                    {
-                        throw new InvalidOperationException(
-                            $"NonEmptyList property '{property.Name}' on entity '{entityType.Name}' is empty. " +
-                            "A NonEmptyList must always contain at least one element.");
-                    }
+                    throw new InvalidOperationException(
+                        $"Non-empty property '{property.Name}' on entity '{entityType.Name}' is empty. " +
+                        "It must always contain at least one element.");
                 }
             }
         }
     }
 
-    private static bool IsNonEmptyListType(Type type)
+    private static bool IsNonEmptyType(Type type)
     {
-        if (!type.IsGenericType)
-            return false;
+        for (Type? current = type; current is not null && current != typeof(object); current = current.BaseType)
+        {
+            if (current.IsGenericType && NonEmptyGenericTypes.Contains(current.GetGenericTypeDefinition()))
+                return true;
+        }
 
-        Type genericTypeDef = type.GetGenericTypeDefinition();
-        return genericTypeDef == typeof(NonEmptyList<>) ||
-               genericTypeDef == typeof(ImmutableNonEmptyList<>);
+        return false;
     }
 }

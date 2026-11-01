@@ -27,11 +27,22 @@ public sealed class NonEmptyListQueryExpressionInterceptor : IQueryExpressionInt
     /// Exposed for testing and for custom query pipelines.
     /// </summary>
     /// <param name="expression">The expression to rewrite.</param>
-    /// <returns>The rewritten expression, or the same instance when nothing changed.</returns>
+    /// <returns>
+    /// The rewritten expression, or the same instance when nothing changed or when the rewritten tree would no
+    /// longer type-check (for example a lambda declared to return <c>OrderedNonEmptyList&lt;T&gt;</c>).
+    /// </returns>
     public static Expression Rewrite(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        return Rewriter.Instance.Visit(expression);
+        try
+        {
+            return Rewriter.Instance.Visit(expression);
+        }
+        catch (ArgumentException)
+        {
+            // Inside a query the enclosing method call absorbs this; a bare lambda has no such parent.
+            return expression;
+        }
     }
 
     private sealed class Rewriter : ExpressionVisitor

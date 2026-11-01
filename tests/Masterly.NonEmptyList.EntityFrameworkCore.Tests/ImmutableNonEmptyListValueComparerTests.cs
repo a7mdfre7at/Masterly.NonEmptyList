@@ -100,4 +100,35 @@ public class ImmutableNonEmptyListValueComparerTests
 
         Assert.True(comparer.Equals(list1, list2));
     }
+    [Fact]
+    public void WithCustomComparer_GetHashCode_ShouldAgreeWithTheElementComparer()
+    {
+        var comparer = new ImmutableNonEmptyListValueComparer<string>(StringComparer.OrdinalIgnoreCase);
+
+        var list1 = new ImmutableNonEmptyList<string>("Hello", "World");
+        var list2 = new ImmutableNonEmptyList<string>("HELLO", "WORLD");
+
+        Assert.Equal(comparer.GetHashCode(list1), comparer.GetHashCode(list2));
+        Assert.NotEqual(comparer.GetHashCode(list1), comparer.GetHashCode(new ImmutableNonEmptyList<string>("Hello", "There")));
+    }
+
+    [Fact]
+    public void WithCustomComparer_SameReferenceAndNulls_ShouldFollowReferenceSemantics()
+    {
+        var comparer = new ImmutableNonEmptyListValueComparer<string>(StringComparer.OrdinalIgnoreCase);
+        var list = new ImmutableNonEmptyList<string>("a");
+
+        Assert.True(comparer.Equals(list, list));
+        Assert.True(comparer.Equals(null, null));
+        Assert.False(comparer.Equals(list, null));
+        Assert.False(comparer.Equals(null, list));
+    }
+
+    [Fact]
+    public void WithCustomComparer_DifferentCounts_ShouldReturnFalse()
+    {
+        var comparer = new ImmutableNonEmptyListValueComparer<string>(StringComparer.OrdinalIgnoreCase);
+
+        Assert.False(comparer.Equals(new ImmutableNonEmptyList<string>("a"), new ImmutableNonEmptyList<string>("A", "b")));
+    }
 }

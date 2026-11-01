@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Masterly.NonEmptyList.EntityFrameworkCore.Tests;
@@ -164,10 +165,177 @@ public class NonEmptyListQueryExpressionInterceptorTests
     [Fact]
     public void Rewrite_LeavesUnrelatedExpressionsUntouched()
     {
-        System.Linq.Expressions.Expression<Func<List<int>, int>> expression = xs => xs.Select(x => x * 2).Sum();
+        Expression<Func<List<int>, int>> expression = xs => xs.Select(x => x * 2).Sum();
 
-        System.Linq.Expressions.Expression rewritten = NonEmptyListQueryExpressionInterceptor.Rewrite(expression);
+        Expression rewritten = NonEmptyListQueryExpressionInterceptor.Rewrite(expression);
 
         Assert.Same(expression, rewritten);
+    }
+    private sealed class OrderNames
+    {
+        public NonEmptyList<string> Names { get; set; } = null!;
+
+        public NonEmptyList<decimal> Prices = null!;
+    }
+
+    private static bool CallsNonEmptyListOperators(Expression expression)
+    {
+        var finder = new NonEmptyListCallFinder();
+        finder.Visit(expression);
+        return finder.Found;
+    }
+
+    private sealed class NonEmptyListCallFinder : ExpressionVisitor
+    {
+        public bool Found { get; private set; }
+
+        protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
+            Found |= node.Method.DeclaringType == typeof(NonEmptyListLinqExtensions)
+                     || node.Method.DeclaringType == typeof(NonEmptyListMathExtensions);
+            return base.VisitMethodCall(node);
+        }
+    }
+
+    [Fact]
+    public void FirstProperty_OnNonEmptyListNavigation_IsTranslated()
+    {
+        var options = CreateOptions();
+        int id = SeedOrder(options);
+
+        using var context = new TestDbContext(options);
+
+        string first = context.Orders.Where(o => o.Id == id).Select(o => o.OrderItems.First.ProductName).Single();
+
+        Assert.Equal("Widget", first);
+    }
+
+    [Fact]
+    public void Projection_IntoNonEmptyListPropertyAndField_MaterializesOnClient()
+    {
+        var options = CreateOptions();
+        int id = SeedOrder(options);
+
+        using var context = new TestDbContext(options);
+
+        OrderNames result = context.Orders
+            .Where(o => o.Id == id)
+            .Select(o => new OrderNames
+            {
+                Names = o.OrderItems.Select(i => i.ProductName),
+                Prices = o.OrderItems.Select(i => i.Price),
+            })
+            .Single();
+
+        Assert.Equal(3, result.Names.Count);
+        Assert.Contains("Gadget", result.Names);
+        Assert.Equal(60m, result.Prices.Sum());
+    }
+
+    [Fact]
+    public void Projection_ThatCannotBeExpressedOnEnumerable_IsLeftForEfToReport()
+    {
+        // OrderBy on a NonEmptyList returns OrderedNonEmptyList, which Enumerable.OrderBy cannot produce, so the
+        // rewrite backs off and EF reports its usual untranslatable-navigation error instead of an ArgumentException.
+        var options = CreateOptions();
+        int id = SeedOrder(options);
+
+        using var context = new TestDbContext(options);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            context.Orders.Where(o => o.Id == id).Select(o => o.OrderItems.OrderBy(i => i.Price)).Single());
+    }
+
+    [Fact]
+    public void Rewrite_InstanceMethodOnRewrittenResult_KeepsTheCallAsWritten()
+    {
+        // Contains is a NonEmptyList instance method, so it cannot be applied to the IEnumerable that Select becomes.
+        Expression<Func<NonEmptyList<int>, bool>> expression = xs => xs.Select(x => x * 2).Contains(4);
+
+        var rewritten = (Expression<Func<NonEmptyList<int>, bool>>)NonEmptyListQueryExpressionInterceptor.Rewrite(expression);
+
+        Assert.True(rewritten.Compile()(new NonEmptyList<int>(1, 2)));
+        Assert.False(rewritten.Compile()(new NonEmptyList<int>(3)));
+    }
+
+    [Fact]
+    public void Rewrite_LambdaWhoseResultTypeEnumerableCannotProduce_ReturnsTheExpressionUnchanged()
+    {
+        Expression<Func<NonEmptyList<int>, OrderedNonEmptyList<int>>> expression = xs => xs.OrderBy(x => -x);
+
+        Expression rewritten = NonEmptyListQueryExpressionInterceptor.Rewrite(expression);
+
+        Assert.Same(expression, rewritten);
+    }
+
+    [Fact]
+    public void Rewrite_SelectManyWithNonEmptySelector_AdaptsTheSelectorToEnumerable()
+    {
+        Expression<Func<NonEmptyList<NonEmptyList<int>>, int>> expression = xss => xss.SelectMany(xs => xs).Sum();
+
+        var rewritten = (Expression<Func<NonEmptyList<NonEmptyList<int>>, int>>)NonEmptyListQueryExpressionInterceptor.Rewrite(expression);
+
+        Assert.False(CallsNonEmptyListOperators(rewritten));
+        var input = new NonEmptyList<NonEmptyList<int>>(new NonEmptyList<int>(1, 2), new NonEmptyList<int>(3));
+        Assert.Equal(6, rewritten.Compile()(input));
+    }
+
+    [Fact]
+    public void Rewrite_OperatorWithoutEnumerableEquivalent_IsLeftAlone()
+    {
+        Expression<Func<NonEmptyList<int>, (int Min, int Max)>> expression = xs => xs.MinMax();
+
+        Assert.Same(expression, NonEmptyListQueryExpressionInterceptor.Rewrite(expression));
+    }
+
+    [Fact]
+    public void Rewrite_OtherNonEmptyListProperties_AreLeftAlone()
+    {
+        Expression<Func<NonEmptyList<int>, NonEmptyList<int>?>> expression = xs => xs.Tail;
+
+        Assert.Same(expression, NonEmptyListQueryExpressionInterceptor.Rewrite(expression));
+    }
+
+    [Fact]
+    public void Rewrite_ConstructorsWithoutRewrittenArguments_AreLeftAlone()
+    {
+        Expression<Func<List<int>, object>> expression = xs => new { Empty = new object(), Pair = new KeyValuePair<int, int>(), Count = new KeyValuePair<int, int>(xs.Count, 1) };
+
+        Assert.Same(expression, NonEmptyListQueryExpressionInterceptor.Rewrite(expression));
+    }
+
+    [Fact]
+    public void Rewrite_MemberInitWithoutRewrittenValues_IsLeftAlone()
+    {
+        Expression<Func<NonEmptyList<string>, OrderNames>> expression = xs => new OrderNames { Names = xs };
+
+        Assert.Same(expression, NonEmptyListQueryExpressionInterceptor.Rewrite(expression));
+    }
+
+    [Fact]
+    public void Rewrite_NullExpression_ShouldThrowArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => NonEmptyListQueryExpressionInterceptor.Rewrite(null!));
+    }
+    [Fact]
+    public void Rewrite_IndexedSelect_MapsToTheIndexedEnumerableOverload()
+    {
+        Expression<Func<NonEmptyList<int>, int>> expression = xs => xs.Select((x, i) => x * i).Sum();
+
+        var rewritten = (Expression<Func<NonEmptyList<int>, int>>)NonEmptyListQueryExpressionInterceptor.Rewrite(expression);
+
+        Assert.False(CallsNonEmptyListOperators(rewritten));
+        Assert.Equal(0 * 5 + 1 * 6 + 2 * 7, rewritten.Compile()(new NonEmptyList<int>(5, 6, 7)));
+    }
+
+    [Fact]
+    public void Rewrite_NonGenericOperator_MapsToTheMatchingEnumerableOverload()
+    {
+        Expression<Func<NonEmptyList<int>, double>> expression = xs => xs.Average();
+
+        var rewritten = (Expression<Func<NonEmptyList<int>, double>>)NonEmptyListQueryExpressionInterceptor.Rewrite(expression);
+
+        Assert.False(CallsNonEmptyListOperators(rewritten));
+        Assert.Equal(2.5, rewritten.Compile()(new NonEmptyList<int>(1, 2, 3, 4)));
     }
 }

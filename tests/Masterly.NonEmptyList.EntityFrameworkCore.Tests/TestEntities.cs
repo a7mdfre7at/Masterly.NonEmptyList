@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Masterly.NonEmptyList.EntityFrameworkCore.Tests;
 
 /// <summary>
@@ -121,4 +123,84 @@ public class AuthorBook
     public DateTime AssignedDate { get; set; }
     public Author Author { get; set; } = null!;
     public Book Book { get; set; } = null!;
+}
+
+/// <summary>
+/// Test entity for SaveChanges validation of derived and nullable non-empty properties. The shapes are not mapped,
+/// because the interceptor inspects every public property of the entity, mapped or not.
+/// </summary>
+public class TestEntityWithValidatedShapes
+{
+    public int Id { get; set; }
+
+    [NotMapped]
+    public ConstrainedList<int, AtLeast<Two>> Pair { get; set; } = [1, 2];
+
+    [NotMapped]
+    public NonEmptyList<string>? OptionalTags { get; set; }
+
+    [NotMapped]
+    public NonEmptySet<string>? OptionalSet { get; set; }
+
+    [NotMapped]
+    public NonEmptySet<string> RequiredSet { get; set; } = NonEmptySet.Of("a");
+}
+
+/// <summary>
+/// Principal whose non-empty navigation has no inverse navigation on the dependent.
+/// </summary>
+public class Playlist
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public NonEmptyList<Track> Tracks { get; set; } = null!;
+}
+
+/// <summary>
+/// Dependent of <see cref="Playlist"/>, reachable only through the foreign key.
+/// </summary>
+public class Track
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public int PlaylistId { get; set; }
+}
+
+/// <summary>
+/// Principal whose dependents have a nullable foreign key, so the relationship is optional unless configured otherwise.
+/// </summary>
+public class Project
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public NonEmptyList<ProjectTask> Tasks { get; set; } = null!;
+}
+
+/// <summary>
+/// Dependent of <see cref="Project"/> with a nullable foreign key.
+/// </summary>
+public class ProjectTask
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public int? ProjectId { get; set; }
+    public Project? Project { get; set; }
+}
+
+/// <summary>
+/// Principal whose navigation is declared as an interface, so configuring it as a NonEmptyList needs a cast.
+/// </summary>
+public class Album
+{
+    public int Id { get; set; }
+    public IReadOnlyCollection<Track> Tracks { get; set; } = null!;
+}
+
+/// <summary>
+/// Entity with an ImmutableNonEmptyList whose element type is itself an entity.
+/// </summary>
+public class TrackCollection
+{
+    public int Id { get; set; }
+    public ImmutableNonEmptyList<Track> Tracks { get; set; } = null!;
 }

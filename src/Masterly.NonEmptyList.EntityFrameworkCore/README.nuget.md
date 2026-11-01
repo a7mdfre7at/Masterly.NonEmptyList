@@ -13,7 +13,7 @@ dotnet add package Masterly.NonEmptyList.EntityFrameworkCore
 - **JSON Value Conversion**: Store `NonEmptyList<T>` as JSON strings in the database
 - **Change Tracking**: Proper change detection with custom value comparers
 - **Relationship Support**: Configure one-to-many and many-to-many relationships
-- **Validation Interceptor**: Ensure non-empty constraints on save
+- **Validation Interceptor**: Reject a null or empty non-empty property on save, including derived types such as `ConstrainedList`; properties declared nullable may be null
 - **Query Translation**: Use NonEmptyList LINQ (`Select`, `OrderBy`, `Sum`, `Count`, `Head`, ...) inside EF Core projections
 - **Query Extensions**: Convert query results to `NonEmptyList<T>`
 - **Auto-Configuration**: Convention-based setup for all properties
@@ -80,9 +80,13 @@ NonEmptyList<Product> products = await context.Products
     .ToNonEmptyListAsync();
 ```
 
+## Caveat: Include on many-to-many navigations
+
+`Include` works on one-to-many navigations configured with `HasNonEmptyManyWithOne`. On a many-to-many `NonEmptyList<T>` navigation it throws `InvalidOperationException`, because EF Core materializes the collection by creating it empty first. Query many-to-many data through a projection (`Select`) instead.
+
 ## Documentation
 
-For full documentation, see the [Wiki](https://github.com/a7mdfre7at/Masterly.NonEmptyList/wiki/EF-Core-Integration).
+Full guide: [Entity Framework Core](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/entity-framework-core).
 
 ## License
 

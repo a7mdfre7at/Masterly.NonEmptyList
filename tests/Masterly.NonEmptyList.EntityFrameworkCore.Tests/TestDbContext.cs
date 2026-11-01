@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Masterly.NonEmptyList.EntityFrameworkCore.Tests;
 
@@ -18,6 +19,7 @@ public class TestDbContext : DbContext
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<TestEntityWithMultipleLists> EntitiesWithMultipleLists => Set<TestEntityWithMultipleLists>();
     public DbSet<TestEntityWithComplexList> EntitiesWithComplexLists => Set<TestEntityWithComplexList>();
+    public DbSet<TestEntityWithValidatedShapes> EntitiesWithValidatedShapes => Set<TestEntityWithValidatedShapes>();
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Author> Authors => Set<Author>();
@@ -101,5 +103,34 @@ public class TestDbContextWithConventions : DbContext
 
         // Apply conventions to auto-configure NonEmptyList properties
         modelBuilder.ApplyNonEmptyListConventions();
+    }
+}
+
+/// <summary>
+/// DbContext whose model is supplied by the test, for exercising individual configuration overloads.
+/// Each distinct configuration delegate gets its own cached model.
+/// </summary>
+public class ConfigurableDbContext : DbContext
+{
+    public ConfigurableDbContext(DbContextOptions<ConfigurableDbContext> options, Action<ModelBuilder> configure)
+        : base(options)
+    {
+        Configure = configure;
+    }
+
+    public Action<ModelBuilder> Configure { get; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder) => Configure(modelBuilder);
+
+    public static DbContextOptionsBuilder<ConfigurableDbContext> CreateOptionsBuilder()
+        => new DbContextOptionsBuilder<ConfigurableDbContext>()
+            .ReplaceService<IModelCacheKeyFactory, PerConfigurationModelCacheKeyFactory>();
+
+    private sealed class PerConfigurationModelCacheKeyFactory : IModelCacheKeyFactory
+    {
+        public object Create(DbContext context, bool designTime)
+            => context is ConfigurableDbContext configurable
+                ? (configurable.Configure, designTime)
+                : (context.GetType(), designTime);
     }
 }

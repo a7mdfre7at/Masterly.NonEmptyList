@@ -256,4 +256,41 @@ public class NonEmptyListQueryExtensionTests
 
         Assert.Equal(2, result.Count);
     }
+    [Fact]
+    public async Task ToImmutableNonEmptyListAsync_WithNoResults_ShouldThrow()
+    {
+        var options = CreateOptionsWithData(_ => { });
+
+        await using var context = new TestDbContext(options);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            context.EntitiesWithTags.ToImmutableNonEmptyListAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void ToImmutableNonEmptyListOrNull_WithResults_ShouldReturnTheResultsInOrder()
+    {
+        var options = CreateOptionsWithData(ctx =>
+        {
+            ctx.EntitiesWithTags.Add(new TestEntityWithTags { Name = "B", Tags = new NonEmptyList<string>("tag") });
+            ctx.EntitiesWithTags.Add(new TestEntityWithTags { Name = "A", Tags = new NonEmptyList<string>("tag") });
+        });
+
+        using var context = new TestDbContext(options);
+        var result = context.EntitiesWithTags.OrderBy(e => e.Name).Select(e => e.Name).ToImmutableNonEmptyListOrNull();
+
+        Assert.NotNull(result);
+        Assert.Equal(new[] { "A", "B" }, result);
+    }
+
+    [Fact]
+    public async Task ToImmutableNonEmptyListOrNullAsync_WithNoResults_ShouldReturnNull()
+    {
+        var options = CreateOptionsWithData(_ => { });
+
+        await using var context = new TestDbContext(options);
+        var result = await context.EntitiesWithTags.ToImmutableNonEmptyListOrNullAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(result);
+    }
 }

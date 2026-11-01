@@ -213,4 +213,94 @@ public class NonEmptyListModelBuilderExtensionsTests
         Assert.Equal("123 Main", savedEntity.Addresses.Head.Street);
         Assert.Equal("Springfield", savedEntity.Addresses.Head.City);
     }
+    private static Microsoft.EntityFrameworkCore.Metadata.IMutableProperty? FindTags<TEntity>(ModelBuilder modelBuilder)
+        => modelBuilder.Model.FindEntityType(typeof(TEntity))!.FindProperty("Tags");
+
+    [Fact]
+    public void ApplyNonEmptyListConventionsOnly_ShouldConfigureMutableListsAndLeaveImmutableListsAlone()
+    {
+        // A convention-less builder shows exactly what the method configures.
+        var modelBuilder = new ModelBuilder();
+        modelBuilder.Entity<TestEntityWithTags>();
+        modelBuilder.Entity<TestEntityWithImmutableTags>();
+
+        modelBuilder.ApplyNonEmptyListConventionsOnly();
+
+        var tags = FindTags<TestEntityWithTags>(modelBuilder);
+        Assert.NotNull(tags);
+        Assert.IsType<NonEmptyListValueConverter<string>>(tags.GetValueConverter());
+        Assert.IsType<NonEmptyListValueComparer<string>>(tags.GetValueComparer());
+        Assert.Null(FindTags<TestEntityWithImmutableTags>(modelBuilder));
+    }
+
+    [Fact]
+    public void ApplyImmutableNonEmptyListConventionsOnly_ShouldConfigureImmutableListsAndLeaveMutableListsAlone()
+    {
+        var modelBuilder = new ModelBuilder();
+        modelBuilder.Entity<TestEntityWithTags>();
+        modelBuilder.Entity<TestEntityWithImmutableTags>();
+
+        modelBuilder.ApplyImmutableNonEmptyListConventionsOnly();
+
+        var tags = FindTags<TestEntityWithImmutableTags>(modelBuilder);
+        Assert.NotNull(tags);
+        Assert.IsType<ImmutableNonEmptyListValueConverter<string>>(tags.GetValueConverter());
+        Assert.IsType<ImmutableNonEmptyListValueComparer<string>>(tags.GetValueComparer());
+        Assert.Null(FindTags<TestEntityWithTags>(modelBuilder));
+    }
+
+    [Fact]
+    public void ApplyNonEmptyListConventions_ShouldSkipListsOfEntityTypes()
+    {
+        // Lists whose element is an entity are relationships, not JSON columns.
+        var modelBuilder = new ModelBuilder();
+        modelBuilder.Entity<Track>();
+        modelBuilder.Entity<Playlist>();
+        modelBuilder.Entity<TrackCollection>();
+
+        modelBuilder.ApplyNonEmptyListConventions();
+
+        Assert.Null(modelBuilder.Model.FindEntityType(typeof(Playlist))!.FindProperty(nameof(Playlist.Tracks)));
+        Assert.Null(modelBuilder.Model.FindEntityType(typeof(TrackCollection))!.FindProperty(nameof(TrackCollection.Tracks)));
+    }
+
+    [Fact]
+    public void ApplyNonEmptyListConventionsOnly_ShouldRoundTripThroughTheDatabase()
+    {
+        static void Configure(ModelBuilder mb)
+        {
+            mb.Entity<TestEntityWithTags>();
+            mb.ApplyNonEmptyListConventionsOnly();
+        }
+
+        var options = ConfigurableDbContext.CreateOptionsBuilder().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        using (var context = new ConfigurableDbContext(options, Configure))
+        {
+            context.Add(new TestEntityWithTags { Name = "x", Tags = new NonEmptyList<string>("a", "b") });
+            context.SaveChanges();
+        }
+
+        using (var context = new ConfigurableDbContext(options, Configure))
+            Assert.Equal(new[] { "a", "b" }, context.Set<TestEntityWithTags>().Single().Tags);
+    }
+
+    [Fact]
+    public void ApplyImmutableNonEmptyListConventionsOnly_ShouldRoundTripThroughTheDatabase()
+    {
+        static void Configure(ModelBuilder mb)
+        {
+            mb.Entity<TestEntityWithImmutableTags>();
+            mb.ApplyImmutableNonEmptyListConventionsOnly();
+        }
+
+        var options = ConfigurableDbContext.CreateOptionsBuilder().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        using (var context = new ConfigurableDbContext(options, Configure))
+        {
+            context.Add(new TestEntityWithImmutableTags { Name = "x", Tags = new ImmutableNonEmptyList<string>("a", "b") });
+            context.SaveChanges();
+        }
+
+        using (var context = new ConfigurableDbContext(options, Configure))
+            Assert.Equal(new[] { "a", "b" }, context.Set<TestEntityWithImmutableTags>().Single().Tags);
+    }
 }
