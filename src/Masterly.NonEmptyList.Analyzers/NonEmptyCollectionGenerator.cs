@@ -74,19 +74,10 @@ public sealed class NonEmptyCollectionGenerator : IIncrementalGenerator
             diagnostics.Add(Diagnostic.Create(Descriptors.CollectionInvalidBounds, location, name, "MaxCount must be 0 (unbounded) or at least MinCount"));
 
         string ns = type.ContainingNamespace.IsGlobalNamespace ? "" : type.ContainingNamespace.ToDisplayString();
-        string accessibility = type.DeclaredAccessibility switch
-        {
-            Accessibility.Public => "public",
-            Accessibility.Internal => "internal",
-            _ => "",
-        };
-
         return new Model(
             ns,
             name,
-            accessibility,
             elementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier)),
-            elementType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
             !elementType.IsValueType || elementType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T,
             distinct,
             immutable,
@@ -351,9 +342,7 @@ public sealed class NonEmptyCollectionGenerator : IIncrementalGenerator
     private sealed record Model(
         string Namespace,
         string Name,
-        string Accessibility,
         string ElementType,
-        string ElementTypeDisplay,
         bool ElementCanBeNull,
         bool Distinct,
         bool Immutable,

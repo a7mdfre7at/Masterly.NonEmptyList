@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -59,7 +61,6 @@ internal static class WellKnown
             case "ToConstrainedList":
             case "ToNonEmptySet":
             case "ToNonEmptyDictionary":
-            case "ToImmutableNonEmptyList":
                 return (method.ReducedFrom ?? method).Parameters.Length >= 1;
             default:
                 return false;
@@ -107,7 +108,7 @@ internal static class WellKnown
                     if (creation.ArgumentList is { Arguments.Count: > 0 })
                         return false;
                     ITypeSymbol? type = model.GetTypeInfo(creation).Type;
-                    return IsMutableCollectionType(type);
+                    return IsEmptyWhenDefaultConstructed(type);
                 }
 
             case ImplicitObjectCreationExpressionSyntax implicitCreation:
@@ -117,7 +118,7 @@ internal static class WellKnown
                     if (implicitCreation.ArgumentList.Arguments.Count > 0)
                         return false;
                     ITypeSymbol? type = model.GetTypeInfo(implicitCreation).Type;
-                    return IsMutableCollectionType(type);
+                    return IsEmptyWhenDefaultConstructed(type);
                 }
 
             case InvocationExpressionSyntax invocation:
@@ -136,10 +137,11 @@ internal static class WellKnown
             case MemberAccessExpressionSyntax member:
                 {
                     ISymbol? symbol = model.GetSymbolInfo(member).Symbol;
-                    if (symbol is IFieldSymbol { Name: "Empty" } field && field.ContainingType.ToDisplayString() == "System.String")
+                    if (symbol is IFieldSymbol { Name: "Empty", ContainingType.SpecialType: SpecialType.System_String })
                         return true;
                     if (symbol is IPropertySymbol or IFieldSymbol && symbol.Name == "Empty" && symbol.IsStatic &&
-                        symbol.ContainingType.ToDisplayString().StartsWith("System.Collections.Immutable.", System.StringComparison.Ordinal))
+                        (symbol.ContainingType.ToDisplayString().StartsWith("System.Collections.Immutable.", System.StringComparison.Ordinal) ||
+                         symbol.ContainingType.OriginalDefinition.ToDisplayString() is "System.ReadOnlySpan<T>" or "System.Span<T>"))
                         return true;
                     return false;
                 }
@@ -149,7 +151,7 @@ internal static class WellKnown
         }
     }
 
-    private static bool IsMutableCollectionType(ITypeSymbol? type)
+    private static bool IsEmptyWhenDefaultConstructed(ITypeSymbol? type)
     {
         if (type is not INamedTypeSymbol named)
             return false;
@@ -163,7 +165,9 @@ internal static class WellKnown
             or "System.Collections.Generic.SortedSet<T>"
             or "System.Collections.Generic.Dictionary<TKey, TValue>"
             or "System.Collections.ObjectModel.Collection<T>"
-            or "System.Collections.ObjectModel.ObservableCollection<T>";
+            or "System.Collections.ObjectModel.ObservableCollection<T>"
+            or "System.ReadOnlySpan<T>"
+            or "System.Span<T>";
     }
 
     /// <summary>
@@ -193,7 +197,21 @@ internal static class WellKnown
                 return false;
 
             case ArrayCreationExpressionSyntax array:
-                return array.Initializer is { Expressions.Count: > 0 };
+                if (array.Initializer is not null)
+                    return array.Initializer.Expressions.Count > 0;
+
+                // new int[3] holds three default elements: non-empty whenever every dimension is a positive constant.
+                foreach (ArrayRankSpecifierSyntax rank in array.Type.RankSpecifiers)
+                {
+                    foreach (ExpressionSyntax size in rank.Sizes)
+                    {
+                        Optional<object?> length = model.GetConstantValue(size);
+                        if (!length.HasValue || length.Value is not int n || n <= 0)
+                            return false;
+                    }
+                }
+
+                return true;
 
             case ImplicitArrayCreationExpressionSyntax implicitArray:
                 return implicitArray.Initializer.Expressions.Count > 0;
@@ -208,9 +226,6 @@ internal static class WellKnown
                 {
                     if (model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
                         return false;
-
-                    if (IsNonEmptyType(method.ReturnType))
-                        return true;
 
                     string container = method.ContainingType.ToDisplayString();
                     if (container == "System.Linq.Enumerable")
@@ -230,10 +245,21 @@ internal static class WellKnown
                             if (method.Name == "DefaultIfEmpty")
                                 return true;
 
-                            if (method.Name is "Concat" or "Union" && invocation.ArgumentList.Arguments.Count == 1)
-                                return IsProvenNonEmpty(invocation.ArgumentList.Arguments[0].Expression, model) || (invocation.Expression is MemberAccessExpressionSyntax ma && IsProvenNonEmpty(ma.Expression, model));
+                            // Extension syntax passes the source as the receiver, static syntax (Enumerable.Select(xs, f)) as
+                            // the first argument.
+                            List<ExpressionSyntax> operands = new();
+                            if (method.ReducedFrom is not null)
+                            {
+                                if (invocation.Expression is not MemberAccessExpressionSyntax receiver)
+                                    return false;
+                                operands.Add(receiver.Expression);
+                            }
 
-                            return invocation.Expression is MemberAccessExpressionSyntax receiver && IsProvenNonEmpty(receiver.Expression, model);
+                            operands.AddRange(invocation.ArgumentList.Arguments.Select(argument => argument.Expression));
+
+                            // Concat and Union are non-empty when either side is, the rest when their source is.
+                            int sources = method.Name is "Concat" or "Union" ? 2 : 1;
+                            return operands.Take(sources).Any(operand => IsProvenNonEmpty(operand, model));
                         }
                     }
 

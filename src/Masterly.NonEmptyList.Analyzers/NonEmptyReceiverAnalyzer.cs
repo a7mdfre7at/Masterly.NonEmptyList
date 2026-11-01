@@ -7,8 +7,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Masterly.NonEmptyList.Analyzers;
 
 /// <summary>
-/// NEL003: a throwing LINQ operator (<c>First()</c>, <c>Last()</c>, <c>Single()</c>, <c>Aggregate(f)</c>, ...) is called
-/// on a non-empty list that offers a total member (<c>Head</c>, <c>Last</c>, <c>Reduce</c>).
+/// NEL003: a LINQ operator (<c>First()</c>, <c>Last()</c>, <c>Aggregate(f)</c>, <c>Count()</c>, ...) is called on a
+/// non-empty collection that offers a total member (<c>Head</c>, <c>Last</c>, <c>Reduce</c>, <c>Count</c>).
 /// NEL004: an emptiness check (<c>Any()</c>, <c>Count == 0</c>, ...) on a non-empty list is decided by the type.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -69,8 +69,9 @@ public sealed class NonEmptyReceiverAnalyzer : DiagnosticAnalyzer
                 ReportThrowing(context, invocation, method.Name, "Reduce", "Method");
                 return;
 
-            case "Count" when argumentCount == 0:
-            case "LongCount" when argumentCount == 0:
+            // Only where the receiver has a Count property to switch to; a lazy NonEmptyEnumerable has none.
+            case "Count" when argumentCount == 0 && HasCountProperty(receiverType):
+            case "LongCount" when argumentCount == 0 && HasCountProperty(receiverType):
                 ReportThrowing(context, invocation, method.Name, "Count", "Member");
                 return;
 
@@ -175,6 +176,20 @@ public sealed class NonEmptyReceiverAnalyzer : DiagnosticAnalyzer
             if (current is INamedTypeSymbol named && WellKnown.IsInLibrary(named) &&
                 named.Name is "NonEmptyList" or "ImmutableNonEmptyList" or "ConstrainedList" or "OrderedNonEmptyList" or "NonEmptyGrouping")
                 return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasCountProperty(ITypeSymbol? type)
+    {
+        for (ITypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            foreach (ISymbol member in current.GetMembers("Count"))
+            {
+                if (member is IPropertySymbol { IsStatic: false, IsIndexer: false, DeclaredAccessibility: Accessibility.Public })
+                    return true;
+            }
         }
 
         return false;

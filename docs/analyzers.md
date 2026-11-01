@@ -2,6 +2,8 @@
 
 The `Masterly.NonEmptyList` package ships Roslyn analyzers, code fixes and a source generator. They are active in every project that references the package; nothing to install.
 
+The full reference, with before-and-after examples for every rule, is on the documentation site: [Analyzers and Code Fixes](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/analyzers). Each diagnostic's help link in the IDE opens the matching section there.
+
 Severity can be changed per rule in `.editorconfig`:
 
 ```ini
@@ -12,6 +14,8 @@ dotnet_diagnostic.NEL005.severity = warning   # opt in to the unproven-sequence 
 
 ## Rules
 
+<a id="nel001"></a>
+
 ### NEL001: Empty collection expression assigned to a non-empty type
 
 **Error.** `NonEmptyList<int> xs = [];` compiles because the collection builder accepts any span, but it always throws at run time. Applies to `NonEmptyList<T>`, `ImmutableNonEmptyList<T>`, `ConstrainedList<T, C>`, `NonEmptySet<T>` and arguments passed to parameters of those types.
@@ -21,6 +25,8 @@ NonEmptyList<int> xs = [];        // NEL001
 Take([]);                          // NEL001 when Take accepts a NonEmptyList<int>
 NonEmptyList<int> ok = [1, 2];    // fine
 ```
+
+<a id="nel002"></a>
 
 ### NEL002: Non-empty factory called with an empty argument
 
@@ -33,18 +39,24 @@ new NonEmptyList<int>(new List<int>());    // NEL002
 NonEmptyList.From(source);                 // fine: not provably empty
 ```
 
+<a id="nel003"></a>
+
 ### NEL003: Use the total member instead of a throwing LINQ operator
 
-**Info, with code fix.** On a non-empty list, `First()`, `FirstOrDefault()`, `Last()`, `LastOrDefault()`, `Aggregate(f)`, `Count()` and `LongCount()` carry an empty-sequence exception path the type has already ruled out. The fix rewrites to `Head`, `Last`, `Reduce(f)` or `Count`.
+**Info, with code fix.** On a non-empty list, `First()`, `FirstOrDefault()`, `Last()`, `LastOrDefault()` and `Aggregate(f)` carry an empty-sequence exception path the type has already ruled out. `Count()` and `LongCount()` enumerate where a `Count` property exists; they are reported only on types that have one, so not on the lazy `NonEmptyEnumerable<T>`. The fix rewrites to `Head`, `Last`, `Reduce(f)` or `Count`.
 
 ```csharp
 int first = xs.First();            // NEL003 -> xs.Head
 int total = xs.Aggregate(Add);     // NEL003 -> xs.Reduce(Add)
 ```
 
+<a id="nel004"></a>
+
 ### NEL004: Redundant emptiness check on a non-empty list
 
-**Info, with code fix.** `xs.Any()`, `xs.Count == 0`, `xs.Count > 0`, `xs.Count >= 1`, `xs.Count < 1`, `0 < xs.Count`, `xs.DefaultIfEmpty()` and similar are decided by the type. The fix replaces the expression with `true` or `false`. If emptiness is really possible, widen the variable's type instead.
+**Info, with code fix.** `xs.Any()`, `xs.Count == 0`, `xs.Count > 0`, `xs.Count >= 1`, `xs.Count < 1`, `0 < xs.Count`, `xs.DefaultIfEmpty()` and similar are decided by the type. The fix replaces the expression with `true` or `false`; `DefaultIfEmpty()` is reported without an automatic fix. If emptiness is really possible, widen the variable's type instead.
+
+<a id="nel005"></a>
 
 ### NEL005: Sequence is not proven non-empty
 
@@ -60,9 +72,9 @@ Overloads that cannot throw are skipped: `Aggregate` with a seed, and `Max`/`Min
 
 The fix wraps the receiver: `xs.Max()` becomes `xs.ToNonEmptyList().Max()`, moving the check to the one place it belongs and adding the `using`. Enable the rule, then drive the count to zero the way nullable warnings were driven to zero.
 
-### Migration fix for CS1503, CS0029, CS0266
+### Migration fix for CS1503, CS0029, CS0266, CS1662
 
-Version 3 stopped deriving `NonEmptyList<T>` from `List<T>`. Wherever the compiler reports a failed conversion from a non-empty list to `List<T>`, a code fix offers `.ToList()`. Use *Fix all in solution* to migrate a codebase in one step.
+Version 3 stopped deriving `NonEmptyList<T>` from `List<T>`. Wherever the compiler reports a failed conversion from a non-empty list to `List<T>`, as an argument (CS1503), an assignment (CS0029, CS0266) or a lambda return value (CS1662), a code fix offers `.ToList()`. Explicit casts such as `(List<int>)xs` (CS0030) are not covered; change those by hand. Use *Fix all in solution* to migrate a codebase in one step.
 
 ## Source generator: `[NonEmptyCollection]`
 
@@ -88,6 +100,14 @@ Generated members:
 
 Attribute properties: `Distinct` (reject duplicates), `MinCount` (default 1), `MaxCount` (0 means unbounded), `Immutable` (reject every mutation; use for value objects).
 
-Generator diagnostics: NEL101 the class must be `partial`; NEL102 the class must not be nested; NEL103 invalid `MinCount`/`MaxCount`; NEL104 the class must not declare another base type.
+### Generator diagnostics
 
-The other packages recognize generated classes automatically: Newtonsoft.Json, MessagePack, Dapper, Configuration binding, AutoFixture and the OpenAPI transformer all go through the generated `From` factory.
+<a id="nel101"></a>**NEL101**: the class must be `partial`.
+
+<a id="nel102"></a>**NEL102**: the class must not be nested.
+
+<a id="nel103"></a>**NEL103**: invalid `MinCount`/`MaxCount`.
+
+<a id="nel104"></a>**NEL104**: the class must not declare another base type.
+
+The other packages recognize generated classes automatically. Newtonsoft.Json, MessagePack, Configuration binding, AutoFixture and the OpenAPI transformer go through the generated `From` factory; Dapper recognizes them through their `NonEmptyList<T>` base.

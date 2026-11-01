@@ -148,7 +148,11 @@ public sealed class ToNonEmptyListCodeFixProvider : CodeFixProvider
 
         if (newRoot is CompilationUnitSyntax unit && !unit.Usings.Any(u => u.Name?.ToString() == WellKnown.Namespace))
         {
-            SyntaxTriviaList trailing = unit.Usings.Count > 0 ? unit.Usings[unit.Usings.Count - 1].GetTrailingTrivia() : SyntaxFactory.TriviaList(SyntaxFactory.ElasticCarriageReturnLineFeed);
+            // Without existing usings, end the new one with the document's own line break and a blank line.
+            SyntaxTrivia endOfLine = root.DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+            if (endOfLine.IsKind(SyntaxKind.None))
+                endOfLine = SyntaxFactory.CarriageReturnLineFeed;
+            SyntaxTriviaList trailing = unit.Usings.Count > 0 ? unit.Usings[unit.Usings.Count - 1].GetTrailingTrivia() : SyntaxFactory.TriviaList(endOfLine, endOfLine);
             newRoot = unit.AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(WellKnown.Namespace).WithLeadingTrivia(SyntaxFactory.Space)).WithTrailingTrivia(trailing));
         }
 

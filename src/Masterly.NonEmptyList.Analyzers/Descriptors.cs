@@ -6,7 +6,7 @@ namespace Masterly.NonEmptyList.Analyzers;
 public static class Descriptors
 {
     private const string Category = "Masterly.NonEmptyList";
-    private const string HelpBase = "https://github.com/a7mdfre7at/Masterly.NonEmptyList/blob/master/docs/analyzers.md#";
+    private const string HelpBase = "https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/analyzers#";
 
     /// <summary>NEL001: an empty collection expression is assigned to a non-empty type.</summary>
     public const string EmptyCollectionExpressionId = "NEL001";
@@ -62,7 +62,7 @@ public static class Descriptors
         Category,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "First(), Last(), FirstOrDefault(), LastOrDefault(), Single() and Aggregate() carry an empty-sequence exception path that the non-empty type has already ruled out. Head, Last and Reduce make that visible.",
+        description: "First(), Last(), FirstOrDefault(), LastOrDefault() and Aggregate() carry an empty-sequence exception path that the non-empty type has already ruled out, and Count() enumerates where a Count property exists. Head, Last, Reduce and Count make that visible.",
         helpLinkUri: HelpBase + "nel003");
 
     public static readonly DiagnosticDescriptor RedundantEmptinessCheck = new(
