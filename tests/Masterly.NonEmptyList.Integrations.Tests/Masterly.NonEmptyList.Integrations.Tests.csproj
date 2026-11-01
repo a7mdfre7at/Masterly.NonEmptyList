@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="3.2.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.33" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" Condition="'$(TargetFramework)' == 'net10.0'" />
+    <PackageReference Include="MessagePack" Version="3.1.12" ExcludeAssets="analyzers" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" Condition="'$(TargetFramework)' == 'net10.0'" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" Condition="'$(TargetFramework)' == 'net10.0'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList\Masterly.NonEmptyList.csproj" />
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Configuration\Masterly.NonEmptyList.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.NewtonsoftJson\Masterly.NonEmptyList.NewtonsoftJson.csproj" />
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.MessagePack\Masterly.NonEmptyList.MessagePack.csproj" />
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Dapper\Masterly.NonEmptyList.Dapper.csproj" />
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Testing\Masterly.NonEmptyList.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Masterly.NonEmptyList.Analyzers\Masterly.NonEmptyList.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=netstandard2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

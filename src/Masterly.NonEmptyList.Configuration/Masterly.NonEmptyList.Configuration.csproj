@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Version>3.0.0</Version>
+    <Authors>Ahmad Omar Al-Freihat</Authors>
+    <Description>Microsoft.Extensions.Configuration and Options integration for Masterly.NonEmptyList. Binds NonEmptyList, NonEmptySet, NonEmptyDictionary, ConstrainedList and NonEmptyString properties from configuration (arrays or comma-separated values) and fails at startup, naming the key, when a required collection is empty or missing.</Description>
+    <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>NonEmptyList;Configuration;Options;IOptions;ValidateOnStart;Binding;appsettings;DotNet;CSharp</PackageTags>
+    <PackageIcon>repo_image.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReleaseNotes>
+v3.0.0:
+- Initial release: GetNonEmptyList / GetNonEmptySet / GetNonEmptyDictionary / GetNonEmptyString on IConfiguration
+- BindNonEmptyConfiguration on OptionsBuilder: binds options classes containing non-empty collections; required ones fail at startup with the config key in the message
+- NonEmptyConfigurationBinder for manual binding
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" Condition="'$(TargetFramework)' == 'net10.0'" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsPackaging)' != 'true'">
+    <ProjectReference Include="..\Masterly.NonEmptyList\Masterly.NonEmptyList.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsPackaging)' == 'true'">
+    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.nuget.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\repo_image.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>
