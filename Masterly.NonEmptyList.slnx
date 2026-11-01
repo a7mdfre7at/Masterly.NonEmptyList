@@ -6,13 +6,33 @@
   </Configurations>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <File Path="README.md" />
+    <File Path="CHANGELOG.md" />
+    <File Path="llms.txt" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/analyzers.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj" />
     <Project Path="src/Masterly.NonEmptyList/Masterly.NonEmptyList.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.Analyzers/Masterly.NonEmptyList.Analyzers.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.Analyzers.CodeFixes/Masterly.NonEmptyList.Analyzers.CodeFixes.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.AspNetCore/Masterly.NonEmptyList.AspNetCore.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.Configuration/Masterly.NonEmptyList.Configuration.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.Dapper/Masterly.NonEmptyList.Dapper.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.MessagePack/Masterly.NonEmptyList.MessagePack.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.NewtonsoftJson/Masterly.NonEmptyList.NewtonsoftJson.csproj" />
+    <Project Path="src/Masterly.NonEmptyList.Testing/Masterly.NonEmptyList.Testing.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Masterly.NonEmptyList.Analyzers.Tests/Masterly.NonEmptyList.Analyzers.Tests.csproj" />
+    <Project Path="tests/Masterly.NonEmptyList.AspNetCore.Tests/Masterly.NonEmptyList.AspNetCore.Tests.csproj" />
     <Project Path="tests/Masterly.NonEmptyList.EntityFrameworkCore.Tests/Masterly.NonEmptyList.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="tests/Masterly.NonEmptyList.Integrations.Tests/Masterly.NonEmptyList.Integrations.Tests.csproj" />
     <Project Path="tests/Masterly.NonEmptyList.Tests/Masterly.NonEmptyList.Tests.csproj" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Masterly.NonEmptyList.Benchmarks/Masterly.NonEmptyList.Benchmarks.csproj" />
   </Folder>
 </Solution>

@@ -8,8 +8,8 @@ on:
         required: true
         type: boolean
         default: true
-      publish_efcore:
-        description: 'Publish Masterly.NonEmptyList.EntityFrameworkCore'
+      publish_satellites:
+        description: 'Publish the integration packages (EF Core, AspNetCore, Configuration, NewtonsoftJson, MessagePack, Dapper, Testing)'
         required: true
         type: boolean
         default: true
@@ -36,7 +36,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -52,6 +54,13 @@ jobs:
           VERSION=$(grep -oP '<Version>\K[^<]+' src/Masterly.NonEmptyList/Masterly.NonEmptyList.csproj)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      # The analyzer and code-fix assemblies are packed into analyzers/dotnet/cs of the main package,
+      # so they must be built (Release) before packing.
+      - name: Build analyzers
+        run: |
+          dotnet build src/Masterly.NonEmptyList.Analyzers/Masterly.NonEmptyList.Analyzers.csproj --configuration Release
+          dotnet build src/Masterly.NonEmptyList.Analyzers.CodeFixes/Masterly.NonEmptyList.Analyzers.CodeFixes.csproj --configuration Release
+
       - name: Publish Masterly.NonEmptyList to NuGet
         id: publish_nuget
         uses: alirezanet/publish-nuget@v3.1.0
@@ -63,16 +72,24 @@ jobs:
           NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
           INCLUDE_SYMBOLS: false
 
-  publish-efcore:
-    name: Publish EF Core Package
+  publish-satellites:
+    name: Publish ${{ matrix.package }}
     runs-on: ubuntu-latest
     needs: publish-main
-    if: ${{ always() && (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'workflow_dispatch' && inputs.publish_efcore) }}
+    if: ${{ always() && ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'workflow_dispatch' && inputs.publish_satellites)) }}
     permissions:
       contents: write
-    outputs:
-      version: ${{ steps.get_version.outputs.version }}
-      published: ${{ steps.publish_efcore.outputs.VERSION }}
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - Masterly.NonEmptyList.EntityFrameworkCore
+          - Masterly.NonEmptyList.AspNetCore
+          - Masterly.NonEmptyList.Configuration
+          - Masterly.NonEmptyList.NewtonsoftJson
+          - Masterly.NonEmptyList.MessagePack
+          - Masterly.NonEmptyList.Dapper
+          - Masterly.NonEmptyList.Testing
 
     steps:
       - name: Checkout
@@ -81,7 +98,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -91,59 +110,37 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Extract version from csproj
-        id: get_version
-        run: |
-          VERSION=$(grep -oP '<Version>\K[^<]+' src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Wait for NuGet package availability
+      - name: Wait for Masterly.NonEmptyList on NuGet
         if: ${{ needs.publish-main.outputs.published != '' }}
         run: |
-          echo "Waiting for Masterly.NonEmptyList ${{ needs.publish-main.outputs.version }} to be available on NuGet..."
-          MAX_ATTEMPTS=30
-          ATTEMPT=0
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            ATTEMPT=$((ATTEMPT + 1))
-            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS..."
-
-            # Check if package is available
-            if dotnet nuget search Masterly.NonEmptyList --source https://api.nuget.org/v3/index.json | grep -q "Masterly.NonEmptyList"; then
-              # Verify exact version is available
-              dotnet add src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj package Masterly.NonEmptyList --version ${{ needs.publish-main.outputs.version }} --no-restore 2>/dev/null && {
-                echo "Package Masterly.NonEmptyList ${{ needs.publish-main.outputs.version }} is now available!"
-                break
-              }
+          VERSION="${{ needs.publish-main.outputs.version }}"
+          echo "Waiting for Masterly.NonEmptyList $VERSION to be available on NuGet..."
+          for ATTEMPT in $(seq 1 30); do
+            if curl -sfI "https://api.nuget.org/v3-flatcontainer/masterly.nonemptylist/$VERSION/masterly.nonemptylist.$VERSION.nupkg" > /dev/null; then
+              echo "Available after $ATTEMPT attempt(s)."
+              exit 0
             fi
-
-            if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-              echo "Package not available after $MAX_ATTEMPTS attempts, proceeding anyway..."
-              break
-            fi
-
-            echo "Package not yet available, waiting 60 seconds..."
+            echo "Attempt $ATTEMPT of 30: not yet available, waiting 60 seconds..."
             sleep 60
           done
+          echo "Package not available after 30 attempts, proceeding anyway..."
 
-      - name: Restore and Pack EF Core project
+      - name: Restore and pack
         run: |
-          dotnet restore src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj -p:IsPackaging=true
-          dotnet pack src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj --configuration Release --no-restore -p:IsPackaging=true -o ./nupkg
+          dotnet restore src/${{ matrix.package }}/${{ matrix.package }}.csproj -p:IsPackaging=true
+          dotnet pack src/${{ matrix.package }}/${{ matrix.package }}.csproj --configuration Release --no-restore -p:IsPackaging=true -o ./nupkg
 
       - name: Push to NuGet
-        id: publish_efcore
         run: |
           PACKAGE=$(ls ./nupkg/*.nupkg | head -1)
           echo "Pushing $PACKAGE to NuGet..."
           dotnet nuget push "$PACKAGE" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          VERSION=$(echo "$PACKAGE" | grep -oP '\d+\.\d+\.\d+')
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [publish-main, publish-efcore]
-    if: ${{ always() && (needs.publish-main.result == 'success' || needs.publish-efcore.result == 'success') }}
+    needs: [publish-main, publish-satellites]
+    if: ${{ always() && (needs.publish-main.result == 'success' || needs.publish-satellites.result == 'success') }}
     permissions:
       contents: write
 
@@ -154,13 +151,8 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          # Use main package version if available, otherwise use EF Core version
-          if [ -n "${{ needs.publish-main.outputs.version }}" ]; then
-            echo "version=${{ needs.publish-main.outputs.version }}" >> $GITHUB_OUTPUT
-          else
-            VERSION=$(grep -oP '<Version>\K[^<]+' src/Masterly.NonEmptyList.EntityFrameworkCore/Masterly.NonEmptyList.EntityFrameworkCore.csproj)
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-          fi
+          VERSION=$(grep -oP '<Version>\K[^<]+' src/Masterly.NonEmptyList/Masterly.NonEmptyList.csproj)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
