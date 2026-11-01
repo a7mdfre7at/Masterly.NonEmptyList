@@ -75,7 +75,10 @@ public class DbContextOptionsBuilderExtensionsTests
     [Fact]
     public void UseNonEmptyListValidation_ShouldNotTranslateNavigationQueries()
     {
-        DbContextOptionsBuilder<TestDbContext> builder = NewBuilder().UseNonEmptyListValidation();
+        // EF Core shares its compiled-query cache between contexts whose options differ only in interceptors, so a
+        // test that already ran this query with translation would hand this one a working compiled query. A private
+        // service provider gives this test its own cache, whatever the test order.
+        DbContextOptionsBuilder<TestDbContext> builder = NewBuilder().UseNonEmptyListValidation().EnableServiceProviderCaching(false);
 
         using var context = new TestDbContext(builder.Options);
         context.Orders.Add(new Order { OrderNumber = "A", OrderItems = new NonEmptyList<OrderItem>(new OrderItem { ProductName = "P" }) });
