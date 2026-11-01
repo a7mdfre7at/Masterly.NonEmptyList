@@ -38,6 +38,10 @@ builder.Services.AddControllers().AddNewtonsoftJson(o => o.SerializerSettings.Ad
 
 Null elements, empty arrays, empty objects, blank strings and constraint violations all raise `JsonSerializationException` with the JSON path.
 
+## Documentation
+
+Full guide: <https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/serialization>.
+
 ## License
 
 MIT

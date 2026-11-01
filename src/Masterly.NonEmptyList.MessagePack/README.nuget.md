@@ -38,6 +38,10 @@ MessagePackSerializer.Deserialize<NonEmptyList<int>>(emptyArrayBytes, options);
 
 MessagePack's own source generator tries to generate formatters for every member type of a `[MessagePackObject]` class. For members typed with the non-empty generics, mark the class with `[MessagePackObject(SuppressSourceGeneration = true)]` so the dynamic resolver (and this package's formatters) are used for it.
 
+## Documentation
+
+Full guide: <https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/serialization>.
+
 ## License
 
 MIT

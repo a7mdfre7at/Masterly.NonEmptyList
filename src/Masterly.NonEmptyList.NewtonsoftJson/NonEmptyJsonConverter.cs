@@ -29,7 +29,7 @@ public sealed class NonEmptyJsonConverter : JsonConverter
         if (reader.TokenType == JsonToken.Null)
         {
             if (objectType == typeof(NonEmptyString))
-                throw new JsonSerializationException("NonEmptyString cannot be null");
+                throw Fail(reader, "NonEmptyString cannot be null");
             return null;
         }
 
@@ -38,30 +38,51 @@ public sealed class NonEmptyJsonConverter : JsonConverter
         if (underlying == typeof(NonEmptyString))
         {
             if (reader.TokenType != JsonToken.String)
-                throw new JsonSerializationException($"Expected a string for NonEmptyString but found {reader.TokenType}");
+                throw Fail(reader, $"Expected a string for NonEmptyString but found {reader.TokenType}");
 
             return NonEmptyString.TryCreate((string?)reader.Value, out NonEmptyString result)
                 ? result
-                : throw new JsonSerializationException("NonEmptyString cannot be empty or whitespace");
+                : throw Fail(reader, "NonEmptyString cannot be empty or whitespace");
         }
 
-        Shape shape = GetShape(underlying) ?? throw new JsonSerializationException($"{objectType} is not a non-empty type");
+        Shape shape = GetShape(underlying) ?? throw Fail(reader, $"{objectType} is not a non-empty type");
 
         object? materialized = serializer.Deserialize(reader, shape.IntermediateType);
         if (materialized is null || ((ICollection)materialized).Count == 0)
-            throw new JsonSerializationException($"{underlying.Name} cannot be empty");
+            throw Fail(reader, $"{DisplayName(underlying)} cannot be empty");
 
         if (!shape.IsDictionary && ((IList)materialized).Cast<object?>().Any(static x => x is null))
-            throw new JsonSerializationException($"{underlying.Name} cannot contain null elements");
+            throw Fail(reader, $"{DisplayName(underlying)} cannot contain null elements");
 
         try
         {
             return InvokeFrom(shape.From, materialized);
         }
-        catch (TargetInvocationException ex) when (ex.InnerException is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            throw new JsonSerializationException($"{underlying.Name}: {ex.InnerException.Message}", ex.InnerException);
+            throw Fail(reader, $"{DisplayName(underlying)}: {ex.Message}", ex);
         }
+    }
+
+    // "NonEmptyList" rather than the CLR name "NonEmptyList`1".
+    private static string DisplayName(Type type)
+    {
+        int tick = type.Name.IndexOf('`');
+        return tick < 0 ? type.Name : type.Name[..tick];
+    }
+
+    // Same message shape and Path/LineNumber/LinePosition properties as the exceptions Json.NET raises itself.
+    private static JsonSerializationException Fail(JsonReader reader, string message, Exception? innerException = null)
+    {
+        string path = reader.Path;
+        if (reader is IJsonLineInfo lineInfo && lineInfo.HasLineInfo())
+        {
+            return new JsonSerializationException(
+                $"{message}. Path '{path}', line {lineInfo.LineNumber}, position {lineInfo.LinePosition}.",
+                path, lineInfo.LineNumber, lineInfo.LinePosition, innerException);
+        }
+
+        return new JsonSerializationException($"{message}. Path '{path}'.", path, 0, 0, innerException);
     }
 
     /// <inheritdoc />
@@ -152,7 +173,8 @@ public sealed class NonEmptyJsonConverter : JsonConverter
         args[0] = argument;
         for (int i = 1; i < parameters.Length; i++)
             args[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue : null;
-        return from.Invoke(null, args);
+        // Unwrapped, so a factory's own exception surfaces as itself rather than as TargetInvocationException.
+        return from.Invoke(null, BindingFlags.DoNotWrapExceptions, null, args, null);
     }
 
     private sealed record Shape(Type IntermediateType, bool IsDictionary, MethodInfo From);

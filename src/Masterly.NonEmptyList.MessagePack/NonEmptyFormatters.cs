@@ -93,11 +93,12 @@ public sealed class DerivedNonEmptyListFormatter<TList, T> : IMessagePackFormatt
 
         try
         {
-            return (TList)From.Invoke(null, new object[] { items })!;
+            // Unwrapped, so a factory's own exception surfaces as itself rather than as TargetInvocationException.
+            return (TList)From.Invoke(null, BindingFlags.DoNotWrapExceptions, null, new object[] { items }, null)!;
         }
-        catch (TargetInvocationException ex) when (ex.InnerException is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            throw new MessagePackSerializationException($"{typeof(TList).Name}: {ex.InnerException.Message}", ex.InnerException);
+            throw new MessagePackSerializationException($"{typeof(TList).Name}: {ex.Message}", ex);
         }
     }
 

@@ -41,6 +41,10 @@ Column values are plain JSON (`["a","b"]`), so they remain queryable with your d
 
 All registrations are idempotent. Pass `JsonSerializerOptions` to any `Add...` method to control element serialization.
 
+## Documentation
+
+Full guide: <https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/serialization>.
+
 ## License
 
 MIT

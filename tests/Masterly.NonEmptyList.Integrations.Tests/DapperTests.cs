@@ -128,4 +128,52 @@ public class DapperTests : IDisposable
         Assert.Equal("v", parameter.Value);
         Assert.Throws<DataException>(() => stringHandler.Parse(DBNull.Value));
     }
+
+    private sealed class NullText
+    {
+        public override string? ToString() => null;
+    }
+
+    [Fact]
+    public void Parse_ShouldAcceptAnyValueWhoseTextIsJson_AndRejectJsonNull()
+    {
+        NonEmptyJsonTypeHandler<NonEmptyList<int>> handler = new();
+
+        Assert.Equal(new[] { 1, 2 }, handler.Parse(new System.Text.StringBuilder("[1,2]"))!.ToArray());
+        DataException blank = Assert.Throws<DataException>(() => handler.Parse(new NullText()));
+        DataException jsonNull = Assert.Throws<DataException>(() => handler.Parse("null"));
+
+        Assert.Contains("is empty", blank.Message);
+        Assert.Contains("deserialized to null", jsonNull.Message);
+    }
+
+    public sealed class AuditRow
+    {
+        public long Id { get; set; }
+        public NonEmptyString? Author { get; set; }
+        public NonEmptyList<Guid>? Ids { get; set; }
+        public Readings? Readings { get; set; }
+        public List<int>? Plain { get; set; }
+        public string? Note { get; set; }
+    }
+
+    [Fact]
+    public void AddTypeHandlersFor_ShouldRegisterEachNewTypeOnce_IncludingDerivedCollections()
+    {
+        NonEmptyDapper.AddTypeHandlersFor<AuditRow>();
+        NonEmptyDapper.AddTypeHandlersFor<AuditRow>();
+        _connection.Execute("CREATE TABLE Audit (Id INTEGER PRIMARY KEY, Author TEXT, Ids TEXT, Readings TEXT)");
+        Guid id = Guid.NewGuid();
+
+        _connection.Execute("INSERT INTO Audit (Id, Author, Ids, Readings) VALUES (1, @Author, @Ids, @Readings)",
+            new { Author = new NonEmptyString("ada"), Ids = NonEmptyList.Of(id), Readings = Readings.From(new[] { 3, 1 }) });
+        _connection.Execute("INSERT INTO Audit (Id, Readings) VALUES (2, '[5,5]')");
+        AuditRow back = _connection.QuerySingle<AuditRow>("SELECT * FROM Audit WHERE Id = 1");
+
+        Assert.Equal("ada", back.Author!.Value.Value);
+        Assert.Equal(id, back.Ids!.Head);
+        Assert.Equal(new[] { 3, 1 }, back.Readings!.ToArray());
+        // The generated collection re-checks Distinct while reading, so a duplicate stored by hand fails loudly.
+        Assert.ThrowsAny<DataException>(() => _connection.QuerySingle<AuditRow>("SELECT * FROM Audit WHERE Id = 2"));
+    }
 }

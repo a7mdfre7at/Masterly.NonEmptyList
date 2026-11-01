@@ -109,6 +109,43 @@ public class MessagePackTests
         Assert.Equal(5, MessagePackSerializer.Deserialize<Dto>(bytes, options).Numbers.Head);
         Assert.Throws<ArgumentNullException>(() => ((MessagePackSerializerOptions)null!).WithNonEmptyResolver());
     }
+
+    [Fact]
+    public void NilPayloads_ShouldDeserializeToNullForEveryNullableCollection()
+    {
+        byte[] nil = MessagePackSerializer.Serialize<int[]?>(null, Options);
+
+        Assert.Null(MessagePackSerializer.Deserialize<ImmutableNonEmptyList<int>>(nil, Options));
+        Assert.Null(MessagePackSerializer.Deserialize<Scores>(nil, Options));
+        Assert.Equal(nil, MessagePackSerializer.Serialize<Scores?>(null, Options));
+    }
+
+    [Fact]
+    public void DerivedListWithoutFactory_ShouldExplainWhatIsMissing()
+    {
+        byte[] bytes = MessagePackSerializer.Serialize(new[] { 1 }, Options);
+
+        Exception ex = Assert.ThrowsAny<Exception>(() => MessagePackSerializer.Deserialize<NoFactoryList>(bytes, Options));
+
+        Exception root = ex;
+        while (root.InnerException is not null)
+            root = root.InnerException;
+        Assert.Contains("does not expose a static From(IEnumerable<Int32>) factory", root.Message);
+    }
+
+    [Fact]
+    public void DerivedListFactory_FailingForOtherReasons_ShouldNotBeReportedAsAnInvalidPayload()
+    {
+        byte[] ok = MessagePackSerializer.Serialize(new[] { 1, 2 }, Options);
+        byte[] unlucky = MessagePackSerializer.Serialize(new[] { 13 }, Options);
+
+        Assert.Equal(new[] { 1, 2 }, MessagePackSerializer.Deserialize<Unlucky>(ok, Options).ToArray());
+        MessagePackSerializationException ex = Assert.Throws<MessagePackSerializationException>(() => MessagePackSerializer.Deserialize<Unlucky>(unlucky, Options));
+
+        // MessagePack wraps whatever escapes a formatter; the root cause is the factory's own exception, not a payload error.
+        Assert.IsType<NotSupportedException>(ex.InnerException);
+        Assert.DoesNotContain("Unlucky:", ex.Message);
+    }
 }
 
 /// <summary>A derived collection, as the source generator would produce, with a distinct invariant.</summary>
