@@ -1,62 +1,72 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>2.0.0</Version>
+    <Version>3.0.0</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
-    <Description>A simple and lightweight implementation of a non-empty list in C#, inspired by Scala's List, that ensures a collection always has at least one item. This helps in reducing null-related bugs and ensures safe operations on collections with at least one element. Includes both mutable NonEmptyList and ImmutableNonEmptyList, functional programming operations (Map, FlatMap, Reduce, Fold, Zip), async extensions, and JSON serialization support.</Description>
+    <Description>Proof-carrying collections for .NET. NonEmptyList&lt;T&gt; is a list the type system guarantees has at least one element, with collection expressions, list patterns, type-preserving LINQ, generic math, query-string binding, error-accumulating Validation, constraint types (AtLeast, Distinct, Sorted), NonEmptySet, NonEmptyDictionary, NonEmptyString, zipper, event stream, rose tree, non-empty async batching, and a bundled Roslyn analyzer and source generator.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
     <RepositoryUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</RepositoryUrl>
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>NonEmptyList;non-empty-list;NonEmpty;List;Collection;ImmutableList;FunctionalProgramming;FP;CSharp;DotNet;Scala;TypeSafe;NullSafety;Head;Tail;Map;FlatMap;Reduce;Fold;LINQ;Enumerable</PackageTags>
+    <PackageTags>NonEmptyList;non-empty-list;NonEmpty;List;Collection;ImmutableList;FunctionalProgramming;FP;CSharp;DotNet;Scala;TypeSafe;NullSafety;Head;Tail;Map;FlatMap;Reduce;Fold;LINQ;Enumerable;Validation;Analyzer;SourceGenerator;NonEmptySet;NonEmptyString</PackageTags>
     <PackageIcon>repo_image.png</PackageIcon>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReleaseNotes>
-v2.0.0:
-- Added ImmutableNonEmptyList&lt;T&gt; for immutable scenarios
-- Added functional programming operations: Map, MapWithIndex, FlatMap, Reduce, ReduceRight, Fold, FoldRight
-- Added Zip, ZipWith, ZipWithIndex operations
-- Added Partition and GroupByNonEmpty methods
-- Added pattern matching with Match method
-- Added collection operations: Concat, Prepend, ReverseList, DistinctList, DistinctBy
-- Added TakeNonEmpty, SkipNonEmpty, TakeAtLeastOne, Sliding, ChunkNonEmpty
-- Added Intersperse, RotateLeft, RotateRight operations
-- Added validation: RemoveAll override, SetRange, Validate, TryValidate
-- Added conversion methods: ToHashSet, ToDictionary, ToQueue, ToStack, ToLinkedList, AsSpan, AsMemory
-- Added utility methods: Random, MinBy, MaxBy, ForEachWithIndex
-- Added async extensions: MapAsync, MapParallelAsync, ForEachAsync, FilterAsync, FoldAsync
-- Added JSON serialization support with System.Text.Json
-- Added TryFrom factory method for safe creation
-- Added Singleton and Repeat factory methods
-- Added Init property (opposite of Tail)
-- Added indexer null validation
-- Implemented IEquatable&lt;T&gt; with proper equality operators
-- Multi-targeting: .NET 6.0 and .NET 8.0
+v3.0.0:
+- BREAKING: NonEmptyList&lt;T&gt; no longer inherits List&lt;T&gt;. It wraps its storage, so the non-empty guarantee now holds through IList&lt;T&gt;, ICollection&lt;T&gt; and IList as well
+- BREAKING: Prepend(item) now returns a new list (LINQ semantics); use AddFirst(item) to insert in place
+- BREAKING: Remove(item) returns bool like List&lt;T&gt;; AsReadOnly returns ReadOnlyCollection&lt;T&gt;
+- BREAKING: Dropped .NET 6 target; now targets .NET 8, 9 and 10
+- Collection expressions: NonEmptyList&lt;int&gt; xs = [1, 2, 3]; (also ImmutableNonEmptyList, ConstrainedList, NonEmptySet)
+- List patterns and range slicing: xs is [var head, .. var rest], xs[1..]
+- Type-preserving LINQ: Select, SelectMany, OrderBy/ThenBy, GroupBy, Distinct, Union, Concat, Chunk, Min, Max stay non-empty; query syntax supported
+- Generic math: Sum, Product, Average, Median, Mode, MinMax with no empty-sequence exception path
+- ISpanParsable / TypeConverter: bind NonEmptyList&lt;T&gt; and NonEmptyString directly from query strings, route values and configuration
+- Validation&lt;T, TError&gt;: error-accumulating validation whose error list is non-empty by construction
+- Constraint algebra: ConstrainedList&lt;T, AtLeast&lt;Two&gt;&gt;, Distinct, Sorted, AtMost, Exactly, And, Or; Second()/Third() only when the type proves them
+- New types: NonEmptySet, NonEmptyDictionary, NonEmptyString, NonEmptySpan, NonEmptyZipper, History, EventStream, NonEmptyTree, NonEmptyEnumerable (lazy, infinite)
+- Async batching: BatchNonEmpty (size and time based), ReadAllBatchesAsync for channels, ToNonEmptyAsync / NonEmptyAsyncEnumerable
+- Bundled Roslyn analyzers (NEL001-NEL005) with code fixes, and the [NonEmptyCollection] source generator for domain collections
+- Protected invariant hooks (EnsureMutable, ValidateItem, ValidateRange, ValidateReplacement, ValidateCount) for derived types
+- New factories: NonEmptyList.Of, Create, Range, Iterate, Unfold; FromSpan; params ReadOnlySpan constructors; IEnumerable constructors
+- New operators: Scan, Tails, Inits, Append, Flatten, Unzip, Interleave, Cycle, ConvertAll
+- [NotNullWhen(true)] on TryFrom; DebuggerDisplay and debugger type proxy; O(n) MinBy/MaxBy
     </PackageReleaseNotes>
   </PropertyGroup>
 
+  <!-- The analyzers, code fixes and the [NonEmptyCollection] source generator ship inside this package. -->
   <ItemGroup>
-    <None Include="..\..\README.nuget.md">
+    <ProjectReference Include="../Masterly.NonEmptyList.Analyzers/Masterly.NonEmptyList.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" SetTargetFramework="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="../Masterly.NonEmptyList.Analyzers.CodeFixes/Masterly.NonEmptyList.Analyzers.CodeFixes.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" SetTargetFramework="TargetFramework=netstandard2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../Masterly.NonEmptyList.Analyzers/bin/$(Configuration)/netstandard2.0/Masterly.NonEmptyList.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="../Masterly.NonEmptyList.Analyzers.CodeFixes/bin/$(Configuration)/netstandard2.0/Masterly.NonEmptyList.Analyzers.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.nuget.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
       <Visible>False</Visible>
     </None>
-    <None Include="..\..\repo_image.png">
+    <None Include="../../repo_image.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
       <Visible>False</Visible>
     </None>
-    <None Include="..\..\README.md">
+    <None Include="../../README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
       <Visible>False</Visible>
     </None>
-    <None Include="..\..\LICENSE.txt">
+    <None Include="../../LICENSE.txt">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
       <Visible>False</Visible>

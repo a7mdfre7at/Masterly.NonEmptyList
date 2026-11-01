@@ -61,14 +61,34 @@ public partial class NonEmptyListTests
     #region Prepend Tests
 
     [Fact]
-    public void Prepend_ShouldAddAtBeginning()
+    public void AddFirst_ShouldInsertAtBeginningInPlace()
     {
         NonEmptyList<int> list = new(2, 3);
-        list.Prepend(1);
+        list.AddFirst(1);
 
         Assert.Equal(3, list.Count);
         Assert.Equal(1, list.Head);
         Assert.Equal(new[] { 1, 2, 3 }, list.ToArray());
+    }
+
+    [Fact]
+    public void Prepend_ShouldReturnNewListAndLeaveOriginalUnchanged()
+    {
+        NonEmptyList<int> list = new(2, 3);
+        NonEmptyList<int> result = list.Prepend(1);
+
+        Assert.Equal(new[] { 1, 2, 3 }, result.ToArray());
+        Assert.Equal(new[] { 2, 3 }, list.ToArray());
+    }
+
+    [Fact]
+    public void Append_ShouldReturnNewListAndLeaveOriginalUnchanged()
+    {
+        NonEmptyList<int> list = new(1, 2);
+        NonEmptyList<int> result = list.Append(3);
+
+        Assert.Equal(new[] { 1, 2, 3 }, result.ToArray());
+        Assert.Equal(new[] { 1, 2 }, list.ToArray());
     }
 
     #endregion

@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -10,6 +12,8 @@ namespace Masterly.NonEmptyList;
 /// </summary>
 /// <typeparam name="T">The type of elements in the list.</typeparam>
 [JsonConverter(typeof(ImmutableNonEmptyListJsonConverterFactory))]
+[CollectionBuilder(typeof(ImmutableNonEmptyList), nameof(ImmutableNonEmptyList.Create))]
+[DebuggerDisplay("Count = {Count}, Head = {Head}")]
 public sealed class ImmutableNonEmptyList<T> : IReadOnlyList<T>, IEquatable<ImmutableNonEmptyList<T>>
 {
     private readonly T[] _items;
@@ -77,6 +81,23 @@ public sealed class ImmutableNonEmptyList<T> : IReadOnlyList<T>, IEquatable<Immu
     /// <returns>The element at the specified index.</returns>
     public T this[int index] => _items[index];
 
+    /// <summary>
+    /// Gets the element at the specified index.
+    /// </summary>
+    /// <param name="index">The index of the element to get.</param>
+    public T this[Index index] => _items[index];
+
+    /// <summary>
+    /// Copies the elements in the specified range into a new array. Enables <c>list[1..]</c> and list patterns such as
+    /// <c>[var head, .. var rest]</c>.
+    /// </summary>
+    /// <param name="start">The zero-based index at which the range starts.</param>
+    /// <param name="length">The number of elements in the range.</param>
+    public T[] Slice(int start, int length) => _items.AsSpan(start, length).ToArray();
+
+    /// <summary>Returns a read-only span over the elements. The list is immutable, so the span is always valid.</summary>
+    public ReadOnlySpan<T> AsSpan() => _items;
+
     #endregion
 
     #region Constructors
@@ -87,6 +108,23 @@ public sealed class ImmutableNonEmptyList<T> : IReadOnlyList<T>, IEquatable<Immu
     }
 
     /// <summary>
+    /// Wraps an array that is known to be non-empty, validating that no element is null. The array is not copied.
+    /// </summary>
+    internal static ImmutableNonEmptyList<T> FromTrustedArray(T[] items)
+    {
+        if (items.Length == 0)
+            throw new InvalidOperationException("Internal error: expected a non-empty array.");
+
+        foreach (T item in items)
+        {
+            if (item is null)
+                throw new ArgumentNullException(nameof(items), "ImmutableNonEmptyList cannot contain null values");
+        }
+
+        return new ImmutableNonEmptyList<T>(items);
+    }
+
+    /// <summary>
     /// Creates a new ImmutableNonEmptyList with the first element and additional optional elements.
     /// </summary>
     /// <param name="firstItem">The first item in the list (required).</param>
@@ -94,6 +132,26 @@ public sealed class ImmutableNonEmptyList<T> : IReadOnlyList<T>, IEquatable<Immu
     /// <exception cref="ArgumentNullException">Thrown if any item is null.</exception>
     public ImmutableNonEmptyList(T firstItem, params T[] otherItems)
         : this(firstItem, otherItems.AsEnumerable()) { }
+
+    /// <summary>
+    /// Creates a new ImmutableNonEmptyList by copying a sequence.
+    /// </summary>
+    /// <param name="items">The elements. Must contain at least one element and no nulls.</param>
+    /// <exception cref="ArgumentNullException">Thrown if the sequence is null or contains null.</exception>
+    /// <exception cref="ArgumentException">Thrown if the sequence is empty.</exception>
+    public ImmutableNonEmptyList(IEnumerable<T> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+
+        T[] copy = items.ToArray();
+        if (copy.Length == 0)
+            throw new ArgumentException("Sequence cannot be empty", nameof(items));
+
+        if (Array.Exists(copy, static item => item is null))
+            throw new ArgumentNullException(nameof(items), "Sequence cannot contain null values");
+
+        _items = copy;
+    }
 
     /// <summary>
     /// Creates a new ImmutableNonEmptyList with the first element and an IEnumerable of other elements.
@@ -674,6 +732,49 @@ public sealed class ImmutableNonEmptyList<T> : IReadOnlyList<T>, IEquatable<Immu
     /// </summary>
     /// <returns>A string representation.</returns>
     public override string ToString() => $"ImmutableNonEmptyList: [{string.Join(", ", _items)}]";
+}
+
+/// <summary>
+/// Non-generic entry points for creating <see cref="ImmutableNonEmptyList{T}"/> instances with type inference,
+/// and the target of collection expressions (<c>ImmutableNonEmptyList&lt;int&gt; xs = [1, 2, 3];</c>).
+/// </summary>
+public static class ImmutableNonEmptyList
+{
+    /// <summary>
+    /// Creates an ImmutableNonEmptyList from a span of items. This is the method the compiler calls for collection expressions.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="items">The items to copy. Must contain at least one element.</param>
+    /// <exception cref="ArgumentException">Thrown if the span is empty, for example for the collection expression <c>[]</c>.</exception>
+    public static ImmutableNonEmptyList<T> Create<T>(ReadOnlySpan<T> items)
+    {
+        if (items.IsEmpty)
+            throw new ArgumentException("An ImmutableNonEmptyList must contain at least one element; the collection expression was empty.", nameof(items));
+
+        return ImmutableNonEmptyList<T>.FromTrustedArray(items.ToArray());
+    }
+
+    /// <summary>
+    /// Creates an ImmutableNonEmptyList from a first element and any number of additional elements, inferring the element type.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="first">The first element.</param>
+    /// <param name="rest">Additional elements.</param>
+    public static ImmutableNonEmptyList<T> Of<T>(T first, params T[] rest) => new(first, rest);
+
+    /// <summary>
+    /// Creates an ImmutableNonEmptyList from a sequence, inferring the element type.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="source">The source sequence. Must contain at least one element.</param>
+    public static ImmutableNonEmptyList<T> From<T>(IEnumerable<T> source) => ImmutableNonEmptyList<T>.From(source);
+
+    /// <summary>
+    /// Creates an ImmutableNonEmptyList containing a single element.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="item">The single element.</param>
+    public static ImmutableNonEmptyList<T> Singleton<T>(T item) => new(item);
 }
 
 /// <summary>

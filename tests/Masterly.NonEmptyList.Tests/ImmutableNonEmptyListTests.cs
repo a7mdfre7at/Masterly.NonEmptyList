@@ -29,7 +29,7 @@ public class ImmutableNonEmptyListTests
     public void Constructor_WithNullFirstItem_ShouldThrow()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new ImmutableNonEmptyList<string>(null!));
+            new ImmutableNonEmptyList<string>((string)null!));
     }
 
     [Fact]
