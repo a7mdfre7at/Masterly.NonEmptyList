@@ -8,6 +8,8 @@ Proof-carrying collections for .NET. `NonEmptyList<T>` is a list that the type s
 
 [![Nuget](https://img.shields.io/nuget/v/Masterly.NonEmptyList?style=flat-square)](https://www.nuget.org/packages/Masterly.NonEmptyList) ![Nuget](https://img.shields.io/nuget/dt/Masterly.NonEmptyList?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/a7mdfre7at/Masterly.NonEmptyList?style=flat-square) ![GitHub](https://img.shields.io/github/license/a7mdfre7at/Masterly.NonEmptyList) [![Build](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/build.yml) [![CodeQL Analysis](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/codeql.yml) [![Publish to NuGet](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml/badge.svg?branch=master)](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/publish.yml) [![Docs](https://github.com/a7mdfre7at/Masterly.NonEmptyList/actions/workflows/docs.yml/badge.svg?branch=master)](https://a7mdfre7at.github.io/Masterly.NonEmptyList/)
 
+> **Documentation:** the full guide lives at **[a7mdfre7at.github.io/Masterly.NonEmptyList](https://a7mdfre7at.github.io/Masterly.NonEmptyList/)**. Start with the [Quick Start](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/quick-start), browse the [real-world examples](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/examples), or look up any type in the [API reference](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/api-reference). Coming from 2.x? Read [Upgrading from 2.x](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/upgrading-from-2x).
+
 ## Give a Star! :star:
 
 If you like or are using this project please give it a star. Thanks!
@@ -283,7 +285,6 @@ Full guides, examples and the API reference: **[a7mdfre7at.github.io/Masterly.No
 - [Analyzer rules and the source generator](https://a7mdfre7at.github.io/Masterly.NonEmptyList/docs/analyzers) (also in [docs/analyzers.md](docs/analyzers.md))
 - [Changelog](CHANGELOG.md)
 - [llms.txt](llms.txt) for AI assistants
-- The **[Wiki](../../wiki)**
 
 ## License
 
