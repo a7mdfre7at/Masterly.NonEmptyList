@@ -1,0 +1,122 @@
+{
+  "docs": [
+    {
+      "type": "category",
+      "label": "Getting Started",
+      "collapsed": false,
+      "link": {
+        "type": "generated-index",
+        "slug": "/category/getting-started",
+        "title": "Getting Started",
+        "description": "Install the package and write your first non-empty list."
+      },
+      "items": [
+        "overview",
+        "installation",
+        "quick-start"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Working with Lists",
+      "collapsed": false,
+      "link": {
+        "type": "generated-index",
+        "slug": "/category/working-with-lists",
+        "title": "Working with Lists",
+        "description": "Create, change, read, query and aggregate a NonEmptyList<T> without an empty-sequence exception path."
+      },
+      "items": [
+        "creating-lists",
+        "safe-mutation",
+        "reading-elements",
+        "linq",
+        "functional-operations",
+        "generic-math",
+        "async-operations"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Collection Types",
+      "collapsed": false,
+      "link": {
+        "type": "generated-index",
+        "slug": "/category/collection-types",
+        "title": "Collection Types",
+        "description": "Immutable lists, sets, dictionaries, strings, spans, lazy sequences, modeling types and stream batching."
+      },
+      "items": [
+        "immutable-lists",
+        "sets-dictionaries-strings",
+        "spans-and-lazy-sequences",
+        "modeling-types",
+        "batching-streams"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Constraints and Validation",
+      "collapsed": false,
+      "link": {
+        "type": "generated-index",
+        "slug": "/category/constraints-and-validation",
+        "title": "Constraints and Validation",
+        "description": "Cardinality and ordering in the type, error-accumulating validation, and generated domain collections."
+      },
+      "items": [
+        "constrained-lists",
+        "validation",
+        "domain-collections"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Tooling",
+      "collapsed": false,
+      "link": {
+        "type": "generated-index",
+        "slug": "/category/tooling",
+        "title": "Tooling",
+        "description": "The bundled Roslyn analyzer and code fixes."
+      },
+      "items": [
+        "analyzers"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Integrations",
+      "collapsed": false,
+      "link": {
+        "type": "generated-index",
+        "slug": "/category/integrations",
+        "title": "Integrations",
+        "description": "ASP.NET Core, configuration, EF Core, serializers and test tools."
+      },
+      "items": [
+        "aspnetcore",
+        "configuration",
+        "entity-framework-core",
+        "serialization",
+        "testing"
+      ]
+    },
+    "examples",
+    {
+      "type": "category",
+      "label": "Reference",
+      "collapsed": false,
+      "link": {
+        "type": "generated-index",
+        "slug": "/category/reference",
+        "title": "Reference",
+        "description": "The public API of every package, and the 2.x to 3.0 upgrade guide."
+      },
+      "items": [
+        "api-reference",
+        "upgrading-from-2x"
+      ]
+    }
+  ]
+}

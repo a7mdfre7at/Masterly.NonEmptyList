@@ -191,27 +191,6 @@ div[class*='announcementBar_'] button {
   color: var(--mbr-ink);
 }
 
-.navbar-version {
-  display: inline-flex;
-  align-items: center;
-  margin: 0 0.5rem;
-  padding: 0.15rem 0.55rem;
-  border: 1px solid var(--mbr-border-strong);
-  border-radius: 999px;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--mbr-ink-muted);
-  text-decoration: none;
-  transition: border-color var(--mbr-duration) var(--mbr-ease), color var(--mbr-duration) var(--mbr-ease);
-}
-
-.navbar-version:hover {
-  border-color: var(--ifm-color-primary);
-  color: var(--ifm-color-primary);
-  text-decoration: none;
-}
-
 .navbar-icon-link {
   display: inline-flex;
   align-items: center;

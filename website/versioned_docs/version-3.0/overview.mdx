@@ -1,0 +1,53 @@
+---
+id: overview
+title: "Overview"
+description: "What Masterly.NonEmptyList is, why a non-empty list helps, the eight packages, and a map of everything you can do with it."
+sidebar_label: "Overview"
+---
+
+import ConceptFlow from '@site/src/components/docs/ConceptFlow';
+import LinkCards from '@site/src/components/docs/LinkCards';
+
+Masterly.NonEmptyList gives .NET collections that the type system guarantees are never empty. `NonEmptyList<T>` is a list with at least one element, so `Head`, `Last`, `Max`, `Average` and `Reduce` cannot fail for lack of data. Rules such as "an order has at least one line" or "a route has at least one waypoint" appear in your method signatures instead of in comments and defensive checks.
+
+Many LINQ operators on `IEnumerable<T>`, such as `First`, `Max`, `Average` and `Aggregate`, throw `InvalidOperationException: Sequence contains no elements` when the sequence is empty. On a `NonEmptyList<T>` that failure cannot happen. The list keeps the guarantee through every interface it implements. Removing the last element through `IList<T>`, `ICollection<T>` or the non-generic `IList` throws instead of emptying the list.
+
+The core package targets .NET 8, .NET 9 and .NET 10 and has no dependencies. It includes a Roslyn analyzer, code fixes and a source generator. Seven optional packages add support for ASP.NET Core, configuration, EF Core, Newtonsoft.Json, MessagePack, Dapper and testing.
+
+## How it works
+
+Working with a non-empty list has four stages. Select a stage to read its guide.
+
+<ConceptFlow />
+
+## What you can do
+
+<LinkCards
+  columns={3}
+  items={[
+    {icon: 'braces', title: 'Create lists', text: 'Collection expressions, factories and safe conversions from any sequence.', to: '/docs/creating-lists'},
+    {icon: 'lock', title: 'Change lists safely', text: 'The full List<T> surface, with every path that would empty the list blocked.', to: '/docs/safe-mutation'},
+    {icon: 'shuffle', title: 'Query with LINQ', text: 'Operators that cannot produce an empty result keep returning a NonEmptyList.', to: '/docs/linq'},
+    {icon: 'sigma', title: 'Aggregate', text: 'Sum, Average, Median and Mode for any System.Numerics type, with no empty case.', to: '/docs/generic-math'},
+    {icon: 'layers', title: 'More non-empty types', text: 'Sets, dictionaries, strings, immutable lists, spans and lazy sequences.', to: '/docs/sets-dictionaries-strings'},
+    {icon: 'tree', title: 'Model your domain', text: 'A zipper, an undo history, event streams and rose trees that always have a value.', to: '/docs/modeling-types'},
+    {icon: 'ruler', title: 'Constrain the shape', text: 'At least two, at most ten, distinct or sorted, all checked when the list is created.', to: '/docs/constrained-lists'},
+    {icon: 'checks', title: 'Validate input', text: 'Combine checks and report every error at once, never an invalid result with none.', to: '/docs/validation'},
+    {icon: 'activity', title: 'Batch streams', text: 'Turn async streams and channels into non-empty batches by size or by time.', to: '/docs/batching-streams'},
+    {icon: 'scan', title: 'Catch mistakes early', text: 'The bundled analyzer flags empty input and throwing LINQ calls at build time.', to: '/docs/analyzers'},
+    {icon: 'plug', title: 'Use it in ASP.NET Core', text: 'Bind from query strings, publish OpenAPI schemas, return problem details.', to: '/docs/aspnetcore'},
+    {icon: 'database', title: 'Store it with EF Core', text: 'JSON columns, non-empty relationships and LINQ that still translates.', to: '/docs/entity-framework-core'},
+  ]}
+/>
+
+## Where to go next
+
+<LinkCards
+  columns={2}
+  items={[
+    {eyebrow: 'New here', title: 'Quick Start', text: 'Create a list, read it safely, query it and handle empty input.', to: '/docs/quick-start'},
+    {eyebrow: 'See it in context', title: 'Real-world examples', text: 'Orders, API endpoints, batch consumers, configuration and wizards.', to: '/docs/examples'},
+    {eyebrow: 'Coming from 2.x', title: 'Upgrading from 2.x', text: 'What changed in 3.0 and how to migrate each breaking change.', to: '/docs/upgrading-from-2x'},
+    {eyebrow: 'Looking something up', title: 'API reference', text: 'Every public type and member, one package at a time.', to: '/docs/api-reference'},
+  ]}
+/>

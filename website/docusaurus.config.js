@@ -78,6 +78,16 @@ const config = {
           sidebarPath: './sidebars.js',
           editUrl: `${repositoryUrl}/tree/master/website/`,
           showLastUpdateTime: true,
+          // Released versions are snapshots in versioned_docs/ (see versions.json); the newest one is served at /docs.
+          // docs/ holds the next, unreleased version. Cut a version at release time with
+          // `npm run docusaurus -- docs:version <major.minor>`.
+          versions: {
+            current: {
+              label: 'Next',
+              path: 'next',
+              banner: 'unreleased',
+            },
+          },
         },
         blog: false,
         theme: {
@@ -146,9 +156,9 @@ const config = {
           {to: '/docs/examples', label: 'Examples', position: 'left'},
           {to: '/docs/api-reference', label: 'API', position: 'left'},
           {
-            type: 'html',
+            type: 'docsVersionDropdown',
             position: 'right',
-            value: `<a class="navbar-version" href="${repositoryUrl}/blob/master/CHANGELOG.md" title="Changelog">v${packageVersion}</a>`,
+            dropdownItemsAfter: [{href: `${repositoryUrl}/blob/master/CHANGELOG.md`, label: 'Changelog'}],
           },
           {
             href: 'https://www.nuget.org/packages/Masterly.NonEmptyList',
