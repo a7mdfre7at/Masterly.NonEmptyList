@@ -28,7 +28,6 @@ jobs:
       id-token: write   # trusted publishing: lets NuGet/login request a GitHub identity token
     outputs:
       version: ${{ steps.get_version.outputs.version }}
-      published: ${{ steps.publish_nuget.outputs.VERSION }}
 
     steps:
       - name: Checkout
@@ -121,7 +120,8 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Wait for Masterly.NonEmptyList on NuGet
-        if: ${{ needs.publish-main.outputs.published != '' }}
+        # The publish action leaves its VERSION output empty, so key off the job result instead.
+        if: ${{ needs.publish-main.result == 'success' }}
         run: |
           VERSION="${{ needs.publish-main.outputs.version }}"
           echo "Waiting for Masterly.NonEmptyList $VERSION to be available on NuGet..."
