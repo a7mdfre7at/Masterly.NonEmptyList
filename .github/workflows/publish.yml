@@ -25,6 +25,7 @@ jobs:
     if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'workflow_dispatch' && inputs.publish_main) }}
     permissions:
       contents: write
+      id-token: write   # trusted publishing: lets NuGet/login request a GitHub identity token
     outputs:
       version: ${{ steps.get_version.outputs.version }}
       published: ${{ steps.publish_nuget.outputs.VERSION }}
@@ -61,6 +62,14 @@ jobs:
           dotnet build src/Masterly.NonEmptyList.Analyzers/Masterly.NonEmptyList.Analyzers.csproj --configuration Release
           dotnet build src/Masterly.NonEmptyList.Analyzers.CodeFixes/Masterly.NonEmptyList.Analyzers.CodeFixes.csproj --configuration Release
 
+      # Trusted publishing: exchanges the GitHub identity token for a NuGet key valid for about an hour.
+      # Needs a trusted publishing policy on nuget.org for this repository and publish.yml.
+      - name: NuGet login
+        id: nuget_login
+        uses: NuGet/login@v1
+        with:
+          user: a7mdfre7at
+
       - name: Publish Masterly.NonEmptyList to NuGet
         id: publish_nuget
         uses: alirezanet/publish-nuget@v3.1.0
@@ -69,7 +78,7 @@ jobs:
           VERSION_REGEX: ^\s*<Version>(.*)<\/Version>\s*$
           TAG_COMMIT: true
           TAG_FORMAT: v*
-          NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
           INCLUDE_SYMBOLS: false
 
   publish-satellites:
@@ -79,6 +88,7 @@ jobs:
     if: ${{ always() && ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'workflow_dispatch' && inputs.publish_satellites)) }}
     permissions:
       contents: write
+      id-token: write   # trusted publishing
     strategy:
       fail-fast: false
       matrix:
@@ -130,11 +140,18 @@ jobs:
           dotnet restore src/${{ matrix.package }}/${{ matrix.package }}.csproj -p:IsPackaging=true
           dotnet pack src/${{ matrix.package }}/${{ matrix.package }}.csproj --configuration Release --no-restore -p:IsPackaging=true -o ./nupkg
 
+      # After the wait above, so the short-lived key is fresh when the push happens.
+      - name: NuGet login
+        id: nuget_login
+        uses: NuGet/login@v1
+        with:
+          user: a7mdfre7at
+
       - name: Push to NuGet
         run: |
           PACKAGE=$(ls ./nupkg/*.nupkg | head -1)
           echo "Pushing $PACKAGE to NuGet..."
-          dotnet nuget push "$PACKAGE" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          dotnet nuget push "$PACKAGE" --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
   create-release:
     name: Create GitHub Release
