@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
     <Description>Newtonsoft.Json (Json.NET) converters for Masterly.NonEmptyList: NonEmptyList, ImmutableNonEmptyList, NonEmptySet, NonEmptyDictionary, ConstrainedList, NonEmptyString and [NonEmptyCollection]-generated types. Empty arrays are rejected at deserialization time.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
@@ -17,6 +17,9 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReleaseNotes>
+v3.0.1:
+- New package icon: a pair of brackets around a single element
+
 v3.0.0:
 - Initial release: NonEmptyJsonConverter handles every non-empty type in one converter
 - AddNonEmptyConverters() extension for JsonSerializerSettings
@@ -32,7 +35,7 @@ v3.0.0:
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsPackaging)' == 'true'">
-    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.0" />
+    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.1" />
   </ItemGroup>
 
   <ItemGroup>

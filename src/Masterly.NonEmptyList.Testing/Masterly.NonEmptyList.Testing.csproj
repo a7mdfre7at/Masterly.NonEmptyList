@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
     <Description>Test support for Masterly.NonEmptyList: CsCheck generators for every non-empty type, an AutoFixture customization, and the published law suite (functor, monad, fold and structural laws) so property-based tests can verify your own code and extensions.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
@@ -17,6 +17,9 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReleaseNotes>
+v3.0.1:
+- New package icon: a pair of brackets around a single element
+
 v3.0.0:
 - Initial release: NonEmptyGen (CsCheck), NonEmptyCustomization (AutoFixture), NonEmptyListLaws
     </PackageReleaseNotes>
@@ -32,7 +35,7 @@ v3.0.0:
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsPackaging)' == 'true'">
-    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.0" />
+    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.1" />
   </ItemGroup>
 
   <ItemGroup>

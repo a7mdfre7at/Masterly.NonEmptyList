@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
     <Description>Entity Framework Core integration for Masterly.NonEmptyList. Provides value converters, comparers, relationship configuration, and query extensions to seamlessly store and retrieve NonEmptyList and ImmutableNonEmptyList collections in your database.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
@@ -17,6 +17,9 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReleaseNotes>
+v3.0.1:
+- New package icon: a pair of brackets around a single element
+
 v3.0.0:
 - Built against Masterly.NonEmptyList 3.0 (composition-based NonEmptyList)
 - Targets .NET 8, 9 and 10 with matching EF Core versions
@@ -48,7 +51,7 @@ v2.0.0:
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsPackaging)' == 'true'">
-    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.0" />
+    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.1" />
   </ItemGroup>
 
   <ItemGroup>

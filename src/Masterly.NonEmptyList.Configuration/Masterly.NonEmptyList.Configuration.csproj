@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
     <Description>Microsoft.Extensions.Configuration and Options integration for Masterly.NonEmptyList. Binds NonEmptyList, NonEmptySet, NonEmptyDictionary, ConstrainedList and NonEmptyString properties from configuration (arrays or comma-separated values) and fails at startup, naming the key, when a required collection is empty or missing.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
@@ -17,6 +17,9 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReleaseNotes>
+v3.0.1:
+- New package icon: a pair of brackets around a single element
+
 v3.0.0:
 - Initial release: GetNonEmptyList / GetNonEmptySet / GetNonEmptyDictionary / GetNonEmptyString on IConfiguration
 - BindNonEmptyConfiguration on OptionsBuilder: binds options classes containing non-empty collections; required ones fail at startup with the config key in the message
@@ -35,7 +38,7 @@ v3.0.0:
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsPackaging)' == 'true'">
-    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.0" />
+    <PackageReference Include="Masterly.NonEmptyList" Version="3.0.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <Authors>Ahmad Omar Al-Freihat</Authors>
     <Description>Proof-carrying collections for .NET. NonEmptyList&lt;T&gt; is a list the type system guarantees has at least one element, with collection expressions, list patterns, type-preserving LINQ, generic math, query-string binding, error-accumulating Validation, constraint types (AtLeast, Distinct, Sorted), NonEmptySet, NonEmptyDictionary, NonEmptyString, zipper, event stream, rose tree, non-empty async batching, and a bundled Roslyn analyzer and source generator.</Description>
     <PackageProjectUrl>https://github.com/a7mdfre7at/Masterly.NonEmptyList</PackageProjectUrl>
@@ -17,6 +17,9 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReleaseNotes>
+v3.0.1:
+- New package icon: a pair of brackets around a single element
+
 v3.0.0:
 - BREAKING: NonEmptyList&lt;T&gt; no longer inherits List&lt;T&gt;. It wraps its storage, so the non-empty guarantee now holds through IList&lt;T&gt;, ICollection&lt;T&gt; and IList as well
 - BREAKING: Prepend(item) now returns a new list (LINQ semantics); use AddFirst(item) to insert in place

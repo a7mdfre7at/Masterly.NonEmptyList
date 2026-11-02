@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.1
+
+### Changed
+- New package icon and repository image: a pair of brackets around a single element, matching the documentation site.
+
 ## 3.0.0
 
 ### Breaking changes

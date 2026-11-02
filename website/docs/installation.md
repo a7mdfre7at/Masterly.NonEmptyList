@@ -4,7 +4,7 @@ title: "Installation"
 description: "Install the core package and only the companion packages you need. Target frameworks, dependencies and namespaces."
 ---
 
-Install the core package first. Then add only the companion packages you need. All eight packages ship together with the same version number, 3.0.0.
+Install the core package first. Then add only the companion packages you need. All eight packages ship together with the same version number, 3.0.1.
 
 ## Packages
 
@@ -19,7 +19,7 @@ Install the core package first. Then add only the companion packages you need. A
 | `Masterly.NonEmptyList.Dapper` | Dapper type handlers that store collections as JSON text and `NonEmptyString` as text | `net8.0`, `net9.0`, `net10.0` | `Dapper` 2.1.66 |
 | `Masterly.NonEmptyList.Testing` | CsCheck generators, an AutoFixture customization and a law suite for your test projects | `net8.0`, `net9.0`, `net10.0` | `CsCheck` 4.9.1, `AutoFixture` 4.18.1 |
 
-Every companion package also depends on `Masterly.NonEmptyList` 3.0.0. The versions shown are the minimum versions each package references.
+Every companion package also depends on `Masterly.NonEmptyList` 3.0.1. The versions shown are the minimum versions each package references.
 
 ```bash
 dotnet add package Masterly.NonEmptyList
